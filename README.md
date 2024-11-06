@@ -2,7 +2,6 @@
 
 An interactive application that visualizes terrain using elevation tiles.
 
-)
 ![alt text](image.png)
 
 ## 概要
