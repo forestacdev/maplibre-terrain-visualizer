@@ -30414,7 +30414,7 @@ let Dc = no,
                 this.pendingRequests.clear();
         }
     };
-const Bg = new Worker(new URL('/assets/worker-DHgrhoM6.js', import.meta.url), { type: 'module' }),
+const Bg = new Worker(new URL('worker-DHgrhoM6.js', import.meta.url), { type: 'module' }),
     iu = new Rg(Bg),
     Fg = (x) => ({
         protocolName: x,
@@ -30484,7 +30484,7 @@ class Og {
         this.tileCache.clear();
     }
 }
-const $g = new Worker(new URL('/assets/worker-qG8lXCev.js', import.meta.url), { type: 'module' }),
+const $g = new Worker(new URL('worker-qG8lXCev.js', import.meta.url), { type: 'module' }),
     ru = new Og($g),
     Vg = (x) => ({
         protocolName: x,
