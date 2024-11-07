@@ -9,7 +9,7 @@ import { terrainProtocol } from './protocol/terrain';
 import chroma from 'chroma-js';
 import colormap from 'colormap';
 import debounce from 'lodash.debounce';
-import { backgroundSources } from './utils';
+import { backgroundSources, tileOptions } from './utils';
 
 const protocol = demProtocol('webgl');
 maplibregl.addProtocol(protocol.protocolName, protocol.request);
@@ -248,6 +248,8 @@ gui.add(
             'custom_layer',
         );
     });
+
+gui.add(tileOptions.normalMapQuality, 'value', tileOptions.normalMapQuality.selection).name(tileOptions.normalMapQuality.name).onChange(reloadTiles);
 
 const terrainParams = {
     exaggeration: 1,

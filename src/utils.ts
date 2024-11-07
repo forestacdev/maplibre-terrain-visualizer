@@ -390,6 +390,14 @@ export const demLayers: DemLayer[] = [
     // },
 ];
 
+export const tileOptions = {
+    normalMapQuality: {
+        name: '計算品質',
+        value: '低',
+        selection: ['低', '高'],
+    },
+};
+
 export const demEntry: DemEntry = {
     id: 'custom-rgb-dem',
     tileId: demLayers[0].id,
