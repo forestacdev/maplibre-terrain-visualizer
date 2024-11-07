@@ -223,8 +223,46 @@ class WorkerProtocol {
     }
 }
 
-const worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' });
-const workerProtocol = new WorkerProtocol(worker);
+class WorkerProtocolPool {
+    private workers: WorkerProtocol[] = [];
+    private workerIndex = 0;
+    private poolSize: number;
+
+    constructor(poolSize: number = 4) {
+        this.poolSize = poolSize;
+
+        // 指定されたプールサイズのワーカープロトコルを作成
+        for (let i = 0; i < poolSize; i++) {
+            const worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' });
+            this.workers.push(new WorkerProtocol(worker));
+        }
+    }
+
+    // ラウンドロビン方式で次のワーカーを取得
+    private getNextWorker(): WorkerProtocol {
+        const worker = this.workers[this.workerIndex];
+        this.workerIndex = (this.workerIndex + 1) % this.poolSize;
+        return worker;
+    }
+
+    // タイルリクエストを処理する
+    request = async (url: URL, controller: AbortController): Promise<{ data: Uint8Array }> => {
+        const worker = this.getNextWorker();
+        return worker.request(url, controller);
+    };
+
+    // 全てのリクエストをキャンセル
+    cancelAllRequests() {
+        this.workers.forEach((worker) => worker.cancelAllRequests());
+    }
+
+    // 全てのタイルキャッシュをクリア
+    clearCache() {
+        this.workers.forEach((worker) => worker.clearCache());
+    }
+}
+
+const workerProtocolPool = new WorkerProtocolPool(4); // 4つのワーカースレッドを持つプールを作成
 
 export const demProtocol = (protocolName: string) => {
     return {
@@ -232,9 +270,9 @@ export const demProtocol = (protocolName: string) => {
         request: (params: { url: string }, abortController: AbortController) => {
             const urlWithoutProtocol = params.url.replace(`${protocolName}://`, '');
             const url = new URL(urlWithoutProtocol);
-            return workerProtocol.request(url, abortController);
+            return workerProtocolPool.request(url, abortController);
         },
-        cancelAllRequests: () => workerProtocol.cancelAllRequests(),
-        clearCache: () => workerProtocol.clearCache(),
+        cancelAllRequests: () => workerProtocolPool.cancelAllRequests(),
+        clearCache: () => workerProtocolPool.clearCache(),
     };
 };
