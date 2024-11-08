@@ -390,6 +390,14 @@ export const demLayers: DemLayer[] = [
     // },
 ];
 
+export const tileOptions = {
+    normalMapQuality: {
+        name: '法線計算の精度',
+        value: '隣接タイル込み',
+        selection: ['隣接タイル込み', '中心タイルのみ'],
+    },
+};
+
 export const demEntry: DemEntry = {
     id: 'custom-rgb-dem',
     tileId: demLayers[0].id,

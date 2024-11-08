@@ -127,7 +127,7 @@ const setUniforms = (gl: WebGL2RenderingContext, program: WebGLProgram, uniforms
 };
 
 self.onmessage = async (e) => {
-    const { center, left, right, top, bottom, tileId, z, maxzoom, demTypeNumber, uniformsData, evolutionColorArray, slopeCorlorArray, aspectColorArray, floodingImage } = e.data;
+    const { center, left, right, top, bottom, tileId, z, maxzoom, demTypeNumber, uniformsData, evolutionColorArray, slopeCorlorArray, aspectColorArray, floodingImage, onlyCenter } = e.data;
     try {
         if (!gl) {
             initWebGL(canvas);
@@ -142,6 +142,7 @@ self.onmessage = async (e) => {
         const lightDirection = calculateLightDirection(shadow.option.azimuth.value, shadow.option.altitude.value);
 
         const uniforms: Uniforms = {
+            onlyCenter: { type: '1i', value: onlyCenter ? 1 : 0 },
             zoomLevel: { type: '1f', value: z },
             maxzoom: { type: '1f', value: maxzoom },
             evolutionMode: { type: '1i', value: evolution.option.visible.value ? 1 : 0 },
