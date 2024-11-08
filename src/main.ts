@@ -273,13 +273,6 @@ gui.add({ value: false }, 'value')
         }
     });
 
-if (import.meta.env.DEV) {
-    const debugControl = gui.addFolder('debug');
-
-    // タイルの境界線を表示
-    debugControl.add(map, 'showTileBoundaries').name('タイルの境界線を表示');
-}
-
 // 各プロパティに対応するフォルダを作成
 Object.entries(demEntry.uniformsData).forEach(([_key, data]) => {
     let _folder: any;
@@ -394,3 +387,10 @@ other
         'link',
     )
     .name('github');
+
+if (import.meta.env.DEV) {
+    const debugControl = gui.addFolder('debug');
+
+    // タイルの境界線を表示
+    debugControl.add(map, 'showTileBoundaries').name('タイルの境界線を表示');
+}
