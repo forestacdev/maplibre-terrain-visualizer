@@ -393,7 +393,7 @@ export const demLayers: DemLayer[] = [
 export const tileOptions = {
     normalMapQuality: {
         name: '計算品質',
-        value: '低',
+        value: '高',
         selection: ['低', '高'],
     },
 };
