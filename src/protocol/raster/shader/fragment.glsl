@@ -296,7 +296,7 @@ void main() {
 
 
     if (!evolutionMode && !slopeMode && !shadowMode && !aspectMode && !curvatureMode && !edgeMode && !contourMode && !floodingMode) {
-        fragColor = vec4(0.0);
+        fragColor = color;
         return;
     }
 
