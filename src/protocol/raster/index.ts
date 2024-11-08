@@ -142,8 +142,7 @@ class WorkerProtocol {
             const maxzoom = url.searchParams.get('maxzoom') as string;
             const baseUrl = demEntry.url;
 
-            const onlyCenter = tileOptions.normalMapQuality.value === '低';
-            console.log('onlyCenter:', onlyCenter);
+            const onlyCenter = tileOptions.normalMapQuality.value === '中心タイルのみ';
 
             // 画像の取得
             const images = await this.getAdjacentTilesWithImages(x, y, z, baseUrl, controller, onlyCenter);

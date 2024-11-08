@@ -392,9 +392,9 @@ export const demLayers: DemLayer[] = [
 
 export const tileOptions = {
     normalMapQuality: {
-        name: '計算品質',
-        value: '高',
-        selection: ['低', '高'],
+        name: '法線計算の精度',
+        value: '隣接タイル込み',
+        selection: ['隣接タイル込み', '中心タイルのみ'],
     },
 };
 
