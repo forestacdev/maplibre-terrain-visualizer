@@ -14,7 +14,7 @@ uniform sampler2D u_height_map_right;
 uniform sampler2D u_height_map_top;
 uniform sampler2D u_height_map_bottom;
 
-uniform float u_dem_type; // mapbox(0.0), gsi(1.0)
+uniform float u_dem_type; // mapbox(0.0), gsi(1.0), terrarium(2.0)
 uniform float u_zoom_level;
 uniform float u_max_zoom;
 
@@ -71,15 +71,14 @@ float convertToHeight(vec4 color) {
     vec3 rgb = color.rgb * 255.0;
 
     if (u_dem_type == 0.0) {  // mapbox (TerrainRGB)
-        // dot関数で計算を効率化
         return -10000.0 + dot(rgb, vec3(256.0 * 256.0, 256.0, 1.0)) * 0.1;
 
     } else if (u_dem_type == 1.0) {  // gsi (地理院標高タイル)
-        // dot関数でRGBの値をまとめて計算
+    
         float total = dot(rgb, vec3(65536.0, 256.0, 1.0));
         return mix(total, total - 16777216.0, step(8388608.0, total)) * 0.01;
 
-    } else if (u_dem_type == 2.0) {  // terrarium (Terrarium-RGB)
+    } else if (u_dem_type == 2.0) {  // terrarium (TerrariumRGB)
         // 標高 = (R値 * 256 + G値 + B値 / 256) - 32768
         return (rgb.r * 256.0 + rgb.g + rgb.b / 256.0) - 32768.0;
     }
@@ -92,7 +91,6 @@ vec4 getColorFromMap(sampler2D map, float value) {
 
 
 const mat3 conv_c = mat3(vec3(0,-1, 0),vec3(-1, 4,-1), vec3(0,-1, 0));
-
 
 float conv(mat3 a, mat3 b){
   return dot(a[0],b[0]) + dot(a[1],b[1]) + dot(a[2],b[2]);
