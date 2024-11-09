@@ -1,194 +1,6 @@
 import { SourceSpecification } from 'maplibre-gl';
 
-const COLOR_MAP_TYPE = [
-    'jet',
-    'hsv',
-    'hot',
-    'spring',
-    'summer',
-    'autumn',
-    'winter',
-    'bone',
-    'copper',
-    'greys',
-    'yignbu',
-    'greens',
-    'yiorrd',
-    'bluered',
-    'rdbu',
-    'picnic',
-    'rainbow',
-    'portland',
-    'blackbody',
-    'earth',
-    'electric',
-    'viridis',
-    'inferno',
-    'magma',
-    'plasma',
-    'warm',
-    'cool',
-    'rainbow-soft',
-    'bathymetry',
-    'cdom',
-    'chlorophyll',
-    'density',
-    'freesurface-blue',
-    'freesurface-red',
-    'oxygen',
-    'par',
-    'phase',
-    'salinity',
-    'temperature',
-    'turbidity',
-    'velocity-blue',
-    'velocity-green',
-    'cubehelix',
-] as const;
-
-export type ColorMapType = (typeof COLOR_MAP_TYPE)[number];
-const mutableColorMapType: ColorMapType[] = [...COLOR_MAP_TYPE];
-
-type BooleanParameter = {
-    name: string;
-    value: boolean;
-};
-
-type NumberParameter = {
-    name: string;
-    value: number;
-    min: number;
-    max: number;
-    step: number;
-};
-
-type ColorParameter = {
-    name: string;
-    value: string;
-};
-
-export type colorMapParameter = {
-    name: string;
-    value: ColorMapType;
-    reverse: boolean;
-    selection: ColorMapType[];
-};
-
-export const textureData = {
-    water: 'water-bg-pattern-03.jpg',
-    magma: 'magma-bg-pattern.jpg',
-} as const;
-
-export type textureDataKey = keyof typeof textureData;
-
-type TextureParameter = {
-    name: string;
-    value: textureDataKey; // valueはtextureDataのkeyのみを受け入れる
-    selection: textureDataKey[];
-};
-
-export type DemEntry = {
-    id: string;
-    tileId: string;
-    uniformsData: {
-        evolution: {
-            name: string;
-            showMenu: boolean;
-            option: {
-                visible: BooleanParameter;
-                opacity: NumberParameter;
-                maxHeight: NumberParameter;
-                minHeight: NumberParameter;
-                colorMap: colorMapParameter;
-            };
-        };
-        shadow: {
-            name: string;
-            showMenu: boolean;
-            option: {
-                visible: BooleanParameter;
-                opacity: NumberParameter;
-                shadowColor: ColorParameter;
-                highlightColor: ColorParameter;
-                ambient: NumberParameter;
-                azimuth: NumberParameter;
-                altitude: NumberParameter;
-            };
-        };
-        aspect: {
-            name: string;
-            showMenu: boolean;
-            option: {
-                visible: BooleanParameter;
-                opacity: NumberParameter;
-                colorMap: colorMapParameter;
-            };
-        };
-        slope: {
-            name: string;
-            showMenu: boolean;
-            option: {
-                visible: BooleanParameter;
-                opacity: NumberParameter;
-                colorMap: colorMapParameter;
-            };
-        };
-        curvature: {
-            name: string;
-            showMenu: boolean;
-            option: {
-                visible: BooleanParameter;
-                opacity: NumberParameter;
-                ridgeThreshold: NumberParameter;
-                ridgeColor: ColorParameter;
-                valleyThreshold: NumberParameter;
-                valleyColor: ColorParameter;
-            };
-        };
-        edge: {
-            name: string;
-            showMenu: boolean;
-            option: {
-                visible: BooleanParameter;
-                opacity: NumberParameter;
-                edgeIntensity: NumberParameter;
-                edgeColor: ColorParameter;
-            };
-        };
-        contour: {
-            name: string;
-            showMenu: boolean;
-            option: {
-                visible: BooleanParameter;
-                opacity: NumberParameter;
-                contourCount: NumberParameter;
-                maxHeight: NumberParameter;
-                contourColor: ColorParameter;
-            };
-        };
-        flooding: {
-            name: string;
-            showMenu: boolean;
-            option: {
-                visible: BooleanParameter;
-                opacity: NumberParameter;
-                waterLevel: NumberParameter;
-                texture: TextureParameter;
-            };
-        };
-    };
-    name: string;
-    demType: DemDataTypeKey;
-    url: string;
-    attribution: string;
-    sourceMinZoom: number;
-    sourceMaxZoom: number;
-    layerMinZoom?: number;
-    layerMaxZoom?: number;
-    bbox: [number, number, number, number]; // バウンディングボックス
-};
-
-export type DemLayer = {
+export type DemData = {
     id: string;
     name: string;
     tiles: string[];
@@ -209,7 +21,7 @@ export const DEM_DATA_TYPE = {
 export type DemDataType = typeof DEM_DATA_TYPE;
 export type DemDataTypeKey = keyof DemDataType;
 
-export const demLayers: DemLayer[] = [
+export const demLayers: DemData[] = [
     {
         id: 'test',
         name: 'テスト　地理院タイル',
@@ -401,19 +213,200 @@ export const demLayers: DemLayer[] = [
     // },
 ];
 
-export const tileOptions = {
-    normalMapQuality: {
-        name: '法線計算の精度',
-        value: '隣接タイル込み',
-        selection: ['隣接タイル込み', '中心タイルのみ'],
-    },
+const COLOR_MAP_TYPE = [
+    'jet',
+    'hsv',
+    'hot',
+    'spring',
+    'summer',
+    'autumn',
+    'winter',
+    'bone',
+    'copper',
+    'greys',
+    'yignbu',
+    'greens',
+    'yiorrd',
+    'bluered',
+    'rdbu',
+    'picnic',
+    'rainbow',
+    'portland',
+    'blackbody',
+    'earth',
+    'electric',
+    'viridis',
+    'inferno',
+    'magma',
+    'plasma',
+    'warm',
+    'cool',
+    'rainbow-soft',
+    'bathymetry',
+    'cdom',
+    'chlorophyll',
+    'density',
+    'freesurface-blue',
+    'freesurface-red',
+    'oxygen',
+    'par',
+    'phase',
+    'salinity',
+    'temperature',
+    'turbidity',
+    'velocity-blue',
+    'velocity-green',
+    'cubehelix',
+] as const;
+
+export type ColorMapType = (typeof COLOR_MAP_TYPE)[number];
+const mutableColorMapType: ColorMapType[] = [...COLOR_MAP_TYPE];
+
+type BooleanParameter = {
+    name: string;
+    value: boolean;
+};
+
+type NumberParameter = {
+    name: string;
+    value: number;
+    min: number;
+    max: number;
+    step: number;
+};
+
+type ColorParameter = {
+    name: string;
+    value: string;
+};
+
+export type colorMapParameter = {
+    name: string;
+    value: ColorMapType;
+    reverse: boolean;
+    selection: ColorMapType[];
+};
+
+export const textureData = {
+    water: 'water-bg-pattern-03.jpg',
+    magma: 'magma-bg-pattern.jpg',
+} as const;
+
+export type textureDataKey = keyof typeof textureData;
+
+type TextureParameter = {
+    name: string;
+    value: textureDataKey; // valueはtextureDataのkeyのみを受け入れる
+    selection: textureDataKey[];
+};
+
+export type DemEntry = {
+    name: string;
+    demType: DemDataTypeKey;
+    url: string;
+    attribution: string;
+    sourceMinZoom: number;
+    sourceMaxZoom: number;
+    layerMinZoom?: number;
+    layerMaxZoom?: number;
+    bbox: [number, number, number, number];
+    uniformsData: {
+        evolution: {
+            name: string;
+            showMenu: boolean;
+            option: {
+                visible: BooleanParameter;
+                opacity: NumberParameter;
+                maxHeight: NumberParameter;
+                minHeight: NumberParameter;
+                colorMap: colorMapParameter;
+            };
+        };
+        shadow: {
+            name: string;
+            showMenu: boolean;
+            option: {
+                visible: BooleanParameter;
+                opacity: NumberParameter;
+                shadowColor: ColorParameter;
+                highlightColor: ColorParameter;
+                ambient: NumberParameter;
+                azimuth: NumberParameter;
+                altitude: NumberParameter;
+            };
+        };
+        aspect: {
+            name: string;
+            showMenu: boolean;
+            option: {
+                visible: BooleanParameter;
+                opacity: NumberParameter;
+                colorMap: colorMapParameter;
+            };
+        };
+        slope: {
+            name: string;
+            showMenu: boolean;
+            option: {
+                visible: BooleanParameter;
+                opacity: NumberParameter;
+                colorMap: colorMapParameter;
+            };
+        };
+        curvature: {
+            name: string;
+            showMenu: boolean;
+            option: {
+                visible: BooleanParameter;
+                opacity: NumberParameter;
+                ridgeThreshold: NumberParameter;
+                ridgeColor: ColorParameter;
+                valleyThreshold: NumberParameter;
+                valleyColor: ColorParameter;
+            };
+        };
+        edge: {
+            name: string;
+            showMenu: boolean;
+            option: {
+                visible: BooleanParameter;
+                opacity: NumberParameter;
+                edgeIntensity: NumberParameter;
+                edgeColor: ColorParameter;
+            };
+        };
+        contour: {
+            name: string;
+            showMenu: boolean;
+            option: {
+                visible: BooleanParameter;
+                opacity: NumberParameter;
+                contourCount: NumberParameter;
+                maxHeight: NumberParameter;
+                contourColor: ColorParameter;
+            };
+        };
+        flooding: {
+            name: string;
+            showMenu: boolean;
+            option: {
+                visible: BooleanParameter;
+                opacity: NumberParameter;
+                waterLevel: NumberParameter;
+                texture: TextureParameter;
+            };
+        };
+    };
 };
 
 export const demEntry: DemEntry = {
-    id: 'custom-rgb-dem',
-    tileId: demLayers[0].id,
     name: demLayers[0].name,
     demType: demLayers[0].demType,
+    url: demLayers[0].tiles[0],
+    sourceMaxZoom: demLayers[0].maxzoom,
+    sourceMinZoom: demLayers[0].minzoom,
+    attribution: demLayers[0].attribution,
+    bbox: demLayers[0].bbox,
     uniformsData: {
         shadow: {
             name: '陰影',
@@ -676,11 +669,14 @@ export const demEntry: DemEntry = {
             },
         },
     },
-    url: demLayers[0].tiles[0],
-    sourceMaxZoom: demLayers[0].maxzoom,
-    sourceMinZoom: demLayers[0].minzoom,
-    attribution: demLayers[0].attribution,
-    bbox: demLayers[0].bbox,
+};
+
+export const tileOptions = {
+    normalMapQuality: {
+        name: '法線計算の精度',
+        value: '隣接タイル込み',
+        selection: ['隣接タイル込み', '中心タイルのみ'],
+    },
 };
 
 export const backgroundSources: { [_: string]: SourceSpecification } = {
