@@ -3,8 +3,6 @@ import type { DemDataTypeKey } from '../../utils';
 import { TileCache, ColorMapCache, TextureCache } from '../image';
 import { HAS_DEBUG_TILE, debugTileImage } from '../debug';
 
-type TileImageData = { [position: string]: { tileId: string; image: ImageBitmap } };
-
 class WorkerProtocol {
     private worker: Worker;
     private pendingRequests: Map<
@@ -29,37 +27,21 @@ class WorkerProtocol {
         this.worker.addEventListener('error', this.handleError);
     }
 
-    request = async (url: URL, controller: AbortController): Promise<{ data: Uint8Array }> => {
-        try {
-            // タイル座標からIDとURLを生成
-            const x = parseInt(url.searchParams.get('x') || '0', 10);
-            const y = parseInt(url.searchParams.get('y') || '0', 10);
-            const z = parseInt(url.searchParams.get('z') || '0', 10);
-            const demType = demEntry.demType as DemDataTypeKey;
-            const maxzoom = demEntry.sourceMaxZoom;
-            const baseUrl = demEntry.url;
+    async request(url: URL, controller: AbortController): Promise<{ data: Uint8Array }> {
+        // タイル座標からIDとURLを生成
+        const x = parseInt(url.searchParams.get('x') || '0', 10);
+        const y = parseInt(url.searchParams.get('y') || '0', 10);
+        const z = parseInt(url.searchParams.get('z') || '0', 10);
+        const demType = demEntry.demType as DemDataTypeKey;
+        const maxzoom = demEntry.sourceMaxZoom;
+        const baseUrl = demEntry.url;
 
-            const onlyCenter = tileOptions.normalMapQuality.value === '中心タイルのみ';
+        const onlyCenter = tileOptions.normalMapQuality.value === '中心タイルのみ';
 
-            // 画像の取得
-            const images = await this.tileCache.getAdjacentTilesWithImages(x, y, z, baseUrl, controller, onlyCenter);
-            const floodingImage = await this.textureCache.loadImage(demEntry.uniformsData.flooding.option.texture.value);
+        // 画像の取得
+        const images = await this.tileCache.getAdjacentTilesWithImages(x, y, z, baseUrl, controller, onlyCenter);
+        const floodingImage = await this.textureCache.loadImage(demEntry.uniformsData.flooding.option.texture.value);
 
-            return this.processImage(images, demType, z.toString(), maxzoom, floodingImage, onlyCenter, controller);
-        } catch (error) {
-            return Promise.reject(error);
-        }
-    };
-
-    private processImage(
-        images: TileImageData,
-        demType: string,
-        z: string,
-        maxzoom: number,
-        floodingImage: ImageBitmap,
-        onlyCenter: boolean,
-        controller: AbortController,
-    ): Promise<{ data: Uint8Array }> {
         return new Promise((resolve, reject) => {
             const center = images.center; // 中央のタイル
             const tileId = center.tileId; // ワーカー用ID
@@ -107,8 +89,6 @@ class WorkerProtocol {
         } else if (request) {
             request.resolve({ data: buffer });
             this.pendingRequests.delete(id);
-        } else {
-            console.warn(`No pending request found for tile ${id}`);
         }
 
         if (import.meta.env.MODE === 'development' && HAS_DEBUG_TILE) {
@@ -166,10 +146,10 @@ class WorkerProtocolPool {
     }
 
     // タイルリクエストを処理する
-    request = async (url: URL, controller: AbortController): Promise<{ data: Uint8Array }> => {
+    async request(url: URL, controller: AbortController): Promise<{ data: Uint8Array }> {
         const worker = this.getNextWorker();
         return worker.request(url, controller);
-    };
+    }
 
     // 全てのリクエストをキャンセル
     cancelAllRequests() {
