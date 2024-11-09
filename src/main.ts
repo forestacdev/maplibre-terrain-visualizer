@@ -112,7 +112,6 @@ const resetDem = () => {
     protocol.cancelAllRequests();
     protocol.clearCache();
 
-    // カスタムレイヤーのリセット
     map.removeLayer('custom_layer');
     map.removeSource('custom');
     map.addSource('custom', {
@@ -172,8 +171,13 @@ const resetDem = () => {
 const gui = new GUI({
     title: 'コントロール',
     container: document.getElementById('gui') as HTMLElement,
-    width: 350,
+    width: window.innerWidth < 768 ? window.innerWidth - 50 : 350,
 });
+
+// 画面サイズに応じてGUIを折りたたむ
+if (window.innerWidth < 768) {
+    gui.close();
+}
 
 gui.add(
     demEntry,
