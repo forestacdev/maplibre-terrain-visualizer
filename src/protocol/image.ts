@@ -2,6 +2,7 @@ import colormap from 'colormap';
 import type { textureDataKey } from '../utils';
 import { textureData } from '../utils';
 
+type TileImageData = { [position: string]: { tileId: string; image: ImageBitmap } };
 // タイル画像のキャッシュ
 export class TileCache {
     private static instance: TileCache;
@@ -23,7 +24,7 @@ export class TileCache {
         return TileCache.instance;
     }
 
-    public async loadImage(src: string, signal: AbortSignal): Promise<ImageBitmap> {
+    private async loadImage(src: string, signal: AbortSignal): Promise<ImageBitmap> {
         try {
             const response = await fetch(src, { signal });
             if (!response.ok) {
@@ -35,10 +36,57 @@ export class TileCache {
                 // リクエストがキャンセルされた場合はエラーをスロー
                 throw error;
             } else {
-                // 他のエラー時にはプレースホルダー画像を返す
+                // 他のエラー時には空の画像を返す
                 return await createImageBitmap(new ImageData(1, 1));
             }
         }
+    }
+
+    public async getAdjacentTilesWithImages(
+        x: number,
+        y: number,
+        z: number,
+        baseurl: string,
+        controller: AbortController,
+        onlyCenter: boolean, // 新しいオプション引数
+    ): Promise<TileImageData> {
+        const positions = [
+            { position: 'center', dx: 0, dy: 0 },
+            { position: 'left', dx: -1, dy: 0 },
+            { position: 'right', dx: 1, dy: 0 },
+            { position: 'top', dx: 0, dy: -1 },
+            { position: 'bottom', dx: 0, dy: 1 },
+        ];
+
+        const result: TileImageData = {};
+
+        await Promise.all(
+            positions.map(async ({ position, dx, dy }) => {
+                const tileX = x + dx;
+                const tileY = y + dy;
+                const imageUrl = baseurl.replace('{x}', tileX.toString()).replace('{y}', tileY.toString()).replace('{z}', z.toString());
+
+                let imageData;
+
+                if (position === 'center' || !onlyCenter) {
+                    // 中心画像を取得、または onlyCenter が false の場合は通常通り画像を取得
+                    if (this.has(imageUrl)) {
+                        imageData = this.get(imageUrl) as ImageBitmap;
+                        if (position === 'center') this.updateOrder(imageUrl); // 中央のみキャッシュの順序を更新
+                    } else {
+                        imageData = await this.loadImage(imageUrl, controller.signal);
+                        if (position === 'center') this.add(imageUrl, imageData); // 中央のみキャッシュに追加
+                    }
+                } else {
+                    // onlyCenter が true の場合、他の位置には空の画像を使用
+                    imageData = await createImageBitmap(new ImageData(1, 1));
+                }
+
+                result[position] = { tileId: imageUrl, image: imageData };
+            }),
+        );
+
+        return result;
     }
 
     add(tileId: string, image: ImageBitmap): void {
@@ -84,8 +132,8 @@ export class ColorMapCache {
         // reverse フラグを含めてキャッシュキーを作成
         const cacheKey = `${colorMapName}_${reverse ? 'reversed' : 'normal'}`;
 
-        if (this.cache.has(cacheKey)) {
-            return this.cache.get(cacheKey) as Uint8Array;
+        if (this.has(cacheKey)) {
+            return this.get(cacheKey) as Uint8Array;
         }
 
         const width = 256;
@@ -128,6 +176,10 @@ export class ColorMapCache {
     get(cacheKey: string): Uint8Array | undefined {
         return this.cache.get(cacheKey);
     }
+
+    has(cacheKey: string): boolean {
+        return this.cache.has(cacheKey);
+    }
 }
 
 // テクスチャのキャッシュ
@@ -141,8 +193,8 @@ export class TextureCache {
     public async loadImage(key: textureDataKey): Promise<ImageBitmap> {
         const path = textureData[key];
 
-        if (this.cache.has(key)) {
-            return this.cache.get(key) as ImageBitmap;
+        if (this.has(key)) {
+            return this.get(key) as ImageBitmap;
         }
 
         const imageData = await fetch(path)
@@ -159,5 +211,9 @@ export class TextureCache {
 
     get(cacheKey: string): ImageBitmap | undefined {
         return this.cache.get(cacheKey);
+    }
+
+    has(cacheKey: string): boolean {
+        return this.cache.has(cacheKey);
     }
 }
