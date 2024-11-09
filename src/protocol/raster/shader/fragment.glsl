@@ -59,7 +59,7 @@ uniform float u_max_height;
 uniform float u_min_height;
 uniform float u_contour_max_height;
 uniform vec3 u_light_direction;
-in vec2 vTexCoord;
+in vec2 v_tex_coord ;
 out vec4 fragColor;
 
 
@@ -302,7 +302,7 @@ float createContours(float height) {
 }
 
 void main() {
-    vec2 uv = vTexCoord;
+    vec2 uv = v_tex_coord ;
     vec4 color = texture(u_height_map_center, uv);
 
 

@@ -68,7 +68,7 @@ const initWebGL = (canvas: OffscreenCanvas) => {
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     const positions = new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]);
     gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
-    const positionLocation = gl.getAttribLocation(program, 'aPosition');
+    const positionLocation = gl.getAttribLocation(program, 'a_position');
     gl.enableVertexAttribArray(positionLocation);
     gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
 };
