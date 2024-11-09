@@ -128,7 +128,7 @@ class WorkerProtocolPool {
     private workerIndex = 0;
     private poolSize: number;
 
-    constructor(poolSize: number = 4) {
+    constructor(poolSize: number) {
         this.poolSize = poolSize;
 
         // 指定されたプールサイズのワーカープロトコルを作成
@@ -162,7 +162,9 @@ class WorkerProtocolPool {
     }
 }
 
-const workerProtocolPool = new WorkerProtocolPool(4); // 4つのワーカースレッドを持つプールを作成
+const coreCount = navigator.hardwareConcurrency || 4;
+const optimalThreads = Math.max(1, Math.floor(coreCount * 0.75));
+const workerProtocolPool = new WorkerProtocolPool(optimalThreads); // 4つのワーカースレッドを持つプールを作成
 
 export const demProtocol = (protocolName: string) => {
     return {
