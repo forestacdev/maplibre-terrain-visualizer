@@ -1,4 +1,4 @@
-import { DEM_DATA_TYPE } from '../../utils';
+import { DEM_DATA_TYPE, demEntry } from '../../utils';
 import type { DemDataTypeKey } from '../../utils';
 import { TileCache } from '../image';
 
@@ -22,10 +22,10 @@ class WorkerProtocol {
         this.worker.addEventListener('error', this.handleError);
     }
 
-    async request(url: URL, controller: AbortController): Promise<{ data: Uint8Array }> {
+    async request(url: string, controller: AbortController): Promise<{ data: Uint8Array }> {
         try {
-            const demType = url.searchParams.get('demType');
-            const imageUrl = url.origin + url.pathname;
+            const demType = demEntry.demType;
+            const imageUrl = url;
             let image;
             if (this.tileCache.has(imageUrl)) {
                 image = this.tileCache.get(imageUrl);
@@ -99,8 +99,7 @@ export const terrainProtocol = (protocolName: string) => {
     return {
         protocolName,
         request: (params: { url: string }, abortController: AbortController) => {
-            const urlWithoutProtocol = params.url.replace(`${protocolName}://`, '');
-            const url = new URL(urlWithoutProtocol);
+            const url = params.url.replace(`${protocolName}://`, '');
             return workerProtocol.request(url, abortController);
         },
         cancelAllRequests: () => workerProtocol.cancelAllRequests(),

@@ -24,7 +24,7 @@ export class TileCache {
         return TileCache.instance;
     }
 
-    private async loadImage(src: string, signal: AbortSignal): Promise<ImageBitmap> {
+    public async loadImage(src: string, signal: AbortSignal): Promise<ImageBitmap> {
         try {
             const response = await fetch(src, { signal });
             if (!response.ok) {

@@ -26,7 +26,7 @@ const map = new maplibregl.Map({
         sources: {
             terrain: {
                 type: 'raster-dem',
-                tiles: [`${protocol2.protocolName}://${demEntry.url}?x={x}&y={y}&z={z}&demType=${demEntry.demType}`],
+                tiles: [`${protocol2.protocolName}://${demEntry.url}?x={x}&y={y}&z={z}`],
                 tileSize: 256,
                 minzoom: demEntry.sourceMinZoom,
                 maxzoom: demEntry.sourceMaxZoom,
@@ -35,7 +35,7 @@ const map = new maplibregl.Map({
             },
             background: {
                 type: 'raster',
-                tiles: ['https://tile.mierune.co.jp/mierune_mono/{z}/{x}/{y}.png'], // タイルのURL
+                tiles: ['https://tile.mierune.co.jp/mierune_mono/{z}/{x}/{y}.png'],
                 tileSize: 256,
                 maxzoom: 18,
                 attribution:
@@ -43,7 +43,7 @@ const map = new maplibregl.Map({
             },
             custom: {
                 type: 'raster',
-                tiles: [`${protocol.protocolName}://${demEntry.url}?x={x}&y={y}&z={z}&demType=${demEntry.demType}&maxzoom=${demEntry.sourceMaxZoom}`],
+                tiles: [`${protocol.protocolName}://${demEntry.url}?x={x}&y={y}&z={z}`],
                 tileSize: 256,
                 minzoom: demEntry.sourceMinZoom,
                 maxzoom: demEntry.sourceMaxZoom,
@@ -105,7 +105,7 @@ map.addControl(
 const reloadTiles = debounce(() => {
     // protocol.cancelAllRequests();
     const _source = map.getSource('custom') as RasterTileSource;
-    _source.setTiles([`${protocol.protocolName}://${demEntry.url}?x={x}&y={y}&z={z}&demType=${demEntry.demType}&maxzoom=${demEntry.sourceMaxZoom}`]);
+    _source.setTiles([`${protocol.protocolName}://${demEntry.url}?x={x}&y={y}&z={z}`]);
 }, 100);
 
 const resetDem = () => {

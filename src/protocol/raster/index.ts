@@ -35,8 +35,8 @@ class WorkerProtocol {
             const x = parseInt(url.searchParams.get('x') || '0', 10);
             const y = parseInt(url.searchParams.get('y') || '0', 10);
             const z = parseInt(url.searchParams.get('z') || '0', 10);
-            const demType = url.searchParams.get('demType') as DemDataTypeKey;
-            const maxzoom = url.searchParams.get('maxzoom') as string;
+            const demType = demEntry.demType as DemDataTypeKey;
+            const maxzoom = demEntry.sourceMaxZoom;
             const baseUrl = demEntry.url;
 
             const onlyCenter = tileOptions.normalMapQuality.value === '中心タイルのみ';
@@ -55,7 +55,7 @@ class WorkerProtocol {
         images: TileImageData,
         demType: string,
         z: string,
-        maxzoom: string,
+        maxzoom: number,
         floodingImage: ImageBitmap,
         onlyCenter: boolean,
         controller: AbortController,
