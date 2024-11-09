@@ -22,10 +22,9 @@ class WorkerProtocol {
         this.worker.addEventListener('error', this.handleError);
     }
 
-    async request(url: string, controller: AbortController): Promise<{ data: Uint8Array }> {
+    async request(imageUrl: string, controller: AbortController): Promise<{ data: Uint8Array }> {
         try {
             const demType = demEntry.demType;
-            const imageUrl = url;
             let image;
             if (this.tileCache.has(imageUrl)) {
                 image = this.tileCache.get(imageUrl);
@@ -99,8 +98,8 @@ export const terrainProtocol = (protocolName: string) => {
     return {
         protocolName,
         request: (params: { url: string }, abortController: AbortController) => {
-            const url = params.url.replace(`${protocolName}://`, '');
-            return workerProtocol.request(url, abortController);
+            const imageUrl = params.url.replace(`${protocolName}://`, '');
+            return workerProtocol.request(imageUrl, abortController);
         },
         cancelAllRequests: () => workerProtocol.cancelAllRequests(),
         clearCache: () => workerProtocol.clearCache(),
