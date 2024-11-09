@@ -1,6 +1,6 @@
 import { DEM_DATA_TYPE, demEntry, textureData, tileOptions } from '../../utils';
 import type { DemDataTypeKey, textureDataKey } from '../../utils';
-import { TileCache, ColorMapCache } from '../image';
+import { TileCache, ColorMapCache, TextureCache } from '../image';
 import { HAS_DEBUG_TILE, debugTileImage } from '../debug';
 
 type TileImageData = { [position: string]: { tileId: string; image: ImageBitmap } };
@@ -17,30 +17,16 @@ class WorkerProtocol {
     >;
     private tileCache: TileCache;
     private colorMapCache: ColorMapCache;
+    private textureCache: TextureCache;
 
     constructor(worker: Worker) {
         this.worker = worker;
         this.pendingRequests = new Map();
         this.tileCache = TileCache.getInstance(); // シングルトンインスタンスの取得
         this.colorMapCache = new ColorMapCache();
+        this.textureCache = new TextureCache();
         this.worker.addEventListener('message', this.handleMessage);
         this.worker.addEventListener('error', this.handleError);
-    }
-
-    private floodingImageCache: { [key: string]: ImageBitmap } = {};
-    private async getFloodingImage(key: textureDataKey): Promise<ImageBitmap> {
-        const path = textureData[key];
-
-        if (this.floodingImageCache[key]) {
-            return this.floodingImageCache[key];
-        }
-
-        const imageData = await fetch(path)
-            .then((response) => response.blob())
-            .then((blob) => createImageBitmap(blob));
-        this.floodingImageCache[key] = imageData;
-
-        return imageData;
     }
 
     private async getAdjacentTilesWithImages(
@@ -104,7 +90,7 @@ class WorkerProtocol {
 
             // 画像の取得
             const images = await this.getAdjacentTilesWithImages(x, y, z, baseUrl, controller, onlyCenter);
-            const floodingImage = await this.getFloodingImage(demEntry.uniformsData.flooding.option.texture.value);
+            const floodingImage = await this.textureCache.loadImage(demEntry.uniformsData.flooding.option.texture.value);
 
             // 中央タイルの処理結果を返す（配列の最初の要素が中央タイル）
             return this.processImage(images, demType, z.toString(), maxzoom, floodingImage, onlyCenter, controller);

@@ -1,4 +1,6 @@
 import colormap from 'colormap';
+import type { textureDataKey } from '../utils';
+import { textureData } from '../utils';
 
 // タイル画像のキャッシュ
 export class TileCache {
@@ -124,6 +126,38 @@ export class ColorMapCache {
     }
 
     get(cacheKey: string): Uint8Array | undefined {
+        return this.cache.get(cacheKey);
+    }
+}
+
+// テクスチャのキャッシュ
+export class TextureCache {
+    private cache: Map<string, ImageBitmap>;
+
+    public constructor() {
+        this.cache = new Map();
+    }
+
+    public async loadImage(key: textureDataKey): Promise<ImageBitmap> {
+        const path = textureData[key];
+
+        if (this.cache.has(key)) {
+            return this.cache.get(key) as ImageBitmap;
+        }
+
+        const imageData = await fetch(path)
+            .then((response) => response.blob())
+            .then((blob) => createImageBitmap(blob));
+        this.cache.set(key, imageData);
+
+        return imageData;
+    }
+
+    add(cacheKey: string, image: ImageBitmap): void {
+        this.cache.set(cacheKey, image);
+    }
+
+    get(cacheKey: string): ImageBitmap | undefined {
         return this.cache.get(cacheKey);
     }
 }
