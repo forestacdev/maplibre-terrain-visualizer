@@ -6,59 +6,59 @@ precision mediump float;
 #define GLSLIFY 1
 #endif
 
-uniform bool onlyCenter; // onlyCenter フラグ
+uniform bool u_only_center; // 中心タイルのみのフラグ
 
-uniform sampler2D heightMap;
+uniform sampler2D u_height_map;
 uniform sampler2D heightMapLeft;
 uniform sampler2D heightMapRight;
 uniform sampler2D heightMapTop;
 uniform sampler2D heightMapBottom;
 
-uniform float demType; // mapbox(0.0), gsi(1.0)
-uniform float zoomLevel;
-uniform float maxzoom;
+uniform float u_dem_type; // mapbox(0.0), gsi(1.0)
+uniform float u_zoom_level;
+uniform float u_max_zoom;
 
-uniform bool  slopeMode;
-uniform bool  evolutionMode;
-uniform bool  shadowMode;
-uniform bool  aspectMode;
-uniform bool  curvatureMode;
-uniform bool  edgeMode;
-uniform bool  contourMode;
-uniform bool  floodingMode;
+uniform bool  u_slope_mode;
+uniform bool  u_evolution_mode;
+uniform bool  u_shadow_mode;
+uniform bool  u_aspect_mode;
+uniform bool  u_curvature_mode;
+uniform bool  u_edge_mode;
+uniform bool  u_contour_mode;
+uniform bool  u_flooding_mode;
 
 uniform sampler2D u_evolutionMap;
 uniform sampler2D u_slopeMap;
 uniform sampler2D u_aspectMap;
 uniform sampler2D u_floodingImage;
 
-uniform float evolutionAlpha;
-uniform float slopeAlpha;
-uniform float aspectAlpha;
-uniform float curvatureAlpha;
-uniform float edgeAlpha;
-uniform float shadowStrength;
-uniform float ambient;
-uniform float contourAlpha;
-uniform float floodingAlpha;
+uniform float u_evolution_alpha;
+uniform float u_slope_alpha;
+uniform float u_aspect_alpha;
+uniform float u_curvature_alpha;
+uniform float u_edge_alpha;
+uniform float u_shadow_strength;
+uniform float u_ambient;
+uniform float u_contour_alpha;
+uniform float u_flooding_alpha;
 
-uniform vec4 shadowColor;
-uniform vec4 highlightColor;
-uniform vec4 ridgeColor;
-uniform vec4 valleyColor;
-uniform vec4 edgeColor;
-uniform vec4 contourColor;
+uniform vec4 u_shadow_color;
+uniform vec4 u_highlight_color;
+uniform vec4 u_ridge_color;
+uniform vec4 u_valley_color;
+uniform vec4 u_edge_color;
+uniform vec4 u_contour_color;
 
-uniform float ridgeThreshold;
-uniform float valleyThreshold;
-uniform float userDefinedIntensity;
-uniform float contourCount;
-uniform float waterLevel;
+uniform float u_ridge_threshold;
+uniform float u_valley_threshold;
+uniform float u_edge_Intensity;
+uniform float u_contour_count;
+uniform float u_water_level;
 
-uniform float maxHeight;
-uniform float minHeight;
-uniform float contourMaxHeight;
-uniform vec3 lightDirection;
+uniform float u_max_height;
+uniform float u_min_height;
+uniform float u_contour_max_height;
+uniform vec3 u_light_direction;
 in vec2 vTexCoord;
 out vec4 fragColor;
 
@@ -70,16 +70,16 @@ out vec4 fragColor;
 float convertToHeight(vec4 color) {
     vec3 rgb = color.rgb * 255.0;
 
-    if (demType == 0.0) {  // mapbox (TerrainRGB)
+    if (u_dem_type == 0.0) {  // mapbox (TerrainRGB)
         // dot関数で計算を効率化
         return -10000.0 + dot(rgb, vec3(256.0 * 256.0, 256.0, 1.0)) * 0.1;
 
-    } else if (demType == 1.0) {  // gsi (地理院標高タイル)
+    } else if (u_dem_type == 1.0) {  // gsi (地理院標高タイル)
         // dot関数でRGBの値をまとめて計算
         float total = dot(rgb, vec3(65536.0, 256.0, 1.0));
         return mix(total, total - 16777216.0, step(8388608.0, total)) * 0.01;
 
-    } else if (demType == 2.0) {  // terrarium (Terrarium-RGB)
+    } else if (u_dem_type == 2.0) {  // terrarium (Terrarium-RGB)
         // 標高 = (R値 * 256 + G値 + B値 / 256) - 32768
         return (rgb.r * 256.0 + rgb.g + rgb.b / 256.0) - 32768.0;
     }
@@ -118,11 +118,11 @@ TerrainData calculateTerrainData(vec2 uv) {
 
 
    // 高さマップデータの取得、端の場合は隣接テクスチャからサンプル
-    if(onlyCenter){
+    if(u_only_center){
         // 左上
         heightMatrix[0][0] = convertToHeight(texture(
-            heightMap,
-            onlyCenter ? clamp(uv + vec2(-pixelSize.x, -pixelSize.y), vec2(0.0), vec2(1.0) - pixelSize) :
+            u_height_map,
+            u_only_center ? clamp(uv + vec2(-pixelSize.x, -pixelSize.y), vec2(0.0), vec2(1.0) - pixelSize) :
             (uv.x <= pixelSize.x && uv.y <= pixelSize.y) ? uv + vec2(1.0 - pixelSize.x, 1.0 - pixelSize.y) :
             (uv.y <= pixelSize.y) ? uv + vec2(-pixelSize.x, 1.0 - pixelSize.y) :
             (uv.x <= pixelSize.x) ? uv + vec2(1.0 - pixelSize.x, -pixelSize.y) :
@@ -131,16 +131,16 @@ TerrainData calculateTerrainData(vec2 uv) {
 
         // 上
         heightMatrix[0][1] = convertToHeight(texture(
-            heightMap,
-            onlyCenter ? clamp(uv + vec2(0.0, -pixelSize.y), vec2(0.0), vec2(1.0) - pixelSize) :
+            u_height_map,
+            u_only_center ? clamp(uv + vec2(0.0, -pixelSize.y), vec2(0.0), vec2(1.0) - pixelSize) :
             (uv.y <= pixelSize.y) ? uv + vec2(0.0, 1.0 - pixelSize.y) :
             uv + vec2(0.0, -pixelSize.y)
         ));
 
         // 右上
         heightMatrix[0][2] = convertToHeight(texture(
-            heightMap,
-            onlyCenter ? clamp(uv + vec2(pixelSize.x, -pixelSize.y), vec2(0.0), vec2(1.0) - pixelSize) :
+            u_height_map,
+            u_only_center ? clamp(uv + vec2(pixelSize.x, -pixelSize.y), vec2(0.0), vec2(1.0) - pixelSize) :
             (uv.x >= 1.0 - pixelSize.x && uv.y <= pixelSize.y) ? uv + vec2(-1.0 + pixelSize.x, 1.0 - pixelSize.y) :
             (uv.y <= pixelSize.y) ? uv + vec2(pixelSize.x, 1.0 - pixelSize.y) :
             (uv.x >= 1.0 - pixelSize.x) ? uv + vec2(-1.0 + pixelSize.x, -pixelSize.y) :
@@ -149,27 +149,27 @@ TerrainData calculateTerrainData(vec2 uv) {
 
         // 左
         heightMatrix[1][0] = convertToHeight(texture(
-            heightMap,
-            onlyCenter ? clamp(uv + vec2(-pixelSize.x, 0.0), vec2(0.0), vec2(1.0) - pixelSize) :
+            u_height_map,
+            u_only_center ? clamp(uv + vec2(-pixelSize.x, 0.0), vec2(0.0), vec2(1.0) - pixelSize) :
             (uv.x <= pixelSize.x) ? uv + vec2(1.0 - pixelSize.x, 0.0) :
             uv + vec2(-pixelSize.x, 0.0)
         ));
 
         // 中央
-        heightMatrix[1][1] = convertToHeight(texture(heightMap, uv));
+        heightMatrix[1][1] = convertToHeight(texture(u_height_map, uv));
 
         // 右
         heightMatrix[1][2] = convertToHeight(texture(
-            heightMap,
-            onlyCenter ? clamp(uv + vec2(pixelSize.x, 0.0), vec2(0.0), vec2(1.0) - pixelSize) :
+            u_height_map,
+            u_only_center ? clamp(uv + vec2(pixelSize.x, 0.0), vec2(0.0), vec2(1.0) - pixelSize) :
             (uv.x >= 1.0 - pixelSize.x) ? uv + vec2(-1.0 + pixelSize.x, 0.0) :
             uv + vec2(pixelSize.x, 0.0)
         ));
 
         // 左下
         heightMatrix[2][0] = convertToHeight(texture(
-            heightMap,
-            onlyCenter ? clamp(uv + vec2(-pixelSize.x, pixelSize.y), vec2(0.0), vec2(1.0) - pixelSize) :
+            u_height_map,
+            u_only_center ? clamp(uv + vec2(-pixelSize.x, pixelSize.y), vec2(0.0), vec2(1.0) - pixelSize) :
             (uv.x <= pixelSize.x && uv.y >= 1.0 - pixelSize.y) ? uv + vec2(1.0 - pixelSize.x, -1.0 + pixelSize.y) :
             (uv.y >= 1.0 - pixelSize.y) ? uv + vec2(-pixelSize.x, -1.0 + pixelSize.y) :
             (uv.x <= pixelSize.x) ? uv + vec2(1.0 - pixelSize.x, pixelSize.y) :
@@ -178,16 +178,16 @@ TerrainData calculateTerrainData(vec2 uv) {
 
         // 下
         heightMatrix[2][1] = convertToHeight(texture(
-            heightMap,
-            onlyCenter ? clamp(uv + vec2(0.0, pixelSize.y), vec2(0.0), vec2(1.0) - pixelSize) :
+            u_height_map,
+            u_only_center ? clamp(uv + vec2(0.0, pixelSize.y), vec2(0.0), vec2(1.0) - pixelSize) :
             (uv.y >= 1.0 - pixelSize.y) ? uv + vec2(0.0, -1.0 + pixelSize.y) :
             uv + vec2(0.0, pixelSize.y)
         ));
 
         // 右下
         heightMatrix[2][2] = convertToHeight(texture(
-            heightMap,
-            onlyCenter ? clamp(uv + vec2(pixelSize.x, pixelSize.y), vec2(0.0), vec2(1.0) - pixelSize) :
+            u_height_map,
+            u_only_center ? clamp(uv + vec2(pixelSize.x, pixelSize.y), vec2(0.0), vec2(1.0) - pixelSize) :
             (uv.x >= 1.0 - pixelSize.x && uv.y >= 1.0 - pixelSize.y) ? uv + vec2(-1.0 + pixelSize.x, -1.0 + pixelSize.y) :
             (uv.y >= 1.0 - pixelSize.y) ? uv + vec2(pixelSize.x, -1.0 + pixelSize.y) :
             (uv.x >= 1.0 - pixelSize.x) ? uv + vec2(-1.0 + pixelSize.x, pixelSize.y) :
@@ -201,13 +201,13 @@ TerrainData calculateTerrainData(vec2 uv) {
             (uv.x <= pixelSize.x && uv.y <= pixelSize.y) ? texture(heightMapLeft, uv + vec2(1.0 - pixelSize.x, 1.0 - pixelSize.y)) :
             (uv.y <= pixelSize.y) ? texture(heightMapTop, uv + vec2(-pixelSize.x, 1.0 - pixelSize.y)) :
             (uv.x <= pixelSize.x) ? texture(heightMapLeft, uv + vec2(1.0 - pixelSize.x, -pixelSize.y)) :
-            texture(heightMap, uv + vec2(-pixelSize.x, -pixelSize.y))
+            texture(u_height_map, uv + vec2(-pixelSize.x, -pixelSize.y))
         );
 
         // 上
         heightMatrix[0][1] = convertToHeight(
             (uv.y <= pixelSize.y) ? texture(heightMapTop, uv + vec2(0.0, 1.0 - pixelSize.y)) :
-            texture(heightMap, uv + vec2(0.0, -pixelSize.y))
+            texture(u_height_map, uv + vec2(0.0, -pixelSize.y))
         );
 
         // 右上
@@ -215,22 +215,22 @@ TerrainData calculateTerrainData(vec2 uv) {
             (uv.x >= 1.0 - pixelSize.x && uv.y <= pixelSize.y) ? texture(heightMapRight, uv + vec2(-1.0 + pixelSize.x, 1.0 - pixelSize.y)) :
             (uv.y <= pixelSize.y) ? texture(heightMapTop, uv + vec2(pixelSize.x, 1.0 - pixelSize.y)) :
             (uv.x >= 1.0 - pixelSize.x) ? texture(heightMapRight, uv + vec2(-1.0 + pixelSize.x, -pixelSize.y)) :
-            texture(heightMap, uv + vec2(pixelSize.x, -pixelSize.y))
+            texture(u_height_map, uv + vec2(pixelSize.x, -pixelSize.y))
         );
 
         // 左
         heightMatrix[1][0] = convertToHeight(
             (uv.x <= pixelSize.x) ? texture(heightMapLeft, uv + vec2(1.0 - pixelSize.x, 0.0)) :
-            texture(heightMap, uv + vec2(-pixelSize.x, 0.0))
+            texture(u_height_map, uv + vec2(-pixelSize.x, 0.0))
         );
 
         // 中央
-        heightMatrix[1][1] = convertToHeight(texture(heightMap, uv));
+        heightMatrix[1][1] = convertToHeight(texture(u_height_map, uv));
 
         // 右
         heightMatrix[1][2] = convertToHeight(
             (uv.x >= 1.0 - pixelSize.x) ? texture(heightMapRight, uv + vec2(-1.0 + pixelSize.x, 0.0)) :
-            texture(heightMap, uv + vec2(pixelSize.x, 0.0))
+            texture(u_height_map, uv + vec2(pixelSize.x, 0.0))
         );
 
         // 左下
@@ -238,13 +238,13 @@ TerrainData calculateTerrainData(vec2 uv) {
             (uv.x <= pixelSize.x && uv.y >= 1.0 - pixelSize.y) ? texture(heightMapLeft, uv + vec2(1.0 - pixelSize.x, -1.0 + pixelSize.y)) :
             (uv.y >= 1.0 - pixelSize.y) ? texture(heightMapBottom, uv + vec2(-pixelSize.x, -1.0 + pixelSize.y)) :
             (uv.x <= pixelSize.x) ? texture(heightMapLeft, uv + vec2(1.0 - pixelSize.x, pixelSize.y)) :
-            texture(heightMap, uv + vec2(-pixelSize.x, pixelSize.y))
+            texture(u_height_map, uv + vec2(-pixelSize.x, pixelSize.y))
         );
 
         // 下
         heightMatrix[2][1] = convertToHeight(
             (uv.y >= 1.0 - pixelSize.y) ? texture(heightMapBottom, uv + vec2(0.0, -1.0 + pixelSize.y)) :
-            texture(heightMap, uv + vec2(0.0, pixelSize.y))
+            texture(u_height_map, uv + vec2(0.0, pixelSize.y))
         );
 
         // 右下
@@ -252,7 +252,7 @@ TerrainData calculateTerrainData(vec2 uv) {
             (uv.x >= 1.0 - pixelSize.x && uv.y >= 1.0 - pixelSize.y) ? texture(heightMapRight, uv + vec2(-1.0 + pixelSize.x, -1.0 + pixelSize.y)) :
             (uv.y >= 1.0 - pixelSize.y) ? texture(heightMapBottom, uv + vec2(pixelSize.x, -1.0 + pixelSize.y)) :
             (uv.x >= 1.0 - pixelSize.x) ? texture(heightMapRight, uv + vec2(-1.0 + pixelSize.x, pixelSize.y)) :
-            texture(heightMap, uv + vec2(pixelSize.x, pixelSize.y))
+            texture(u_height_map, uv + vec2(pixelSize.x, pixelSize.y))
         );
    }
 
@@ -280,7 +280,7 @@ float calculateSlope(vec3 normal) {
 
 // 等高線を生成する関数 
 float createContours(float height) {
-    float palNum = contourCount; // 等高線の数
+    float palNum = u_contour_count; // 等高線の数
     const float smoothFactor = 0.5; // 滑らかさの制御
 
     // スムーズな等高線の生成
@@ -292,17 +292,17 @@ float createContours(float height) {
 
 void main() {
     vec2 uv = vTexCoord;
-    vec4 color = texture(heightMap, uv);
+    vec4 color = texture(u_height_map, uv);
 
 
-    if (!evolutionMode && !slopeMode && !shadowMode && !aspectMode && !curvatureMode && !edgeMode && !contourMode && !floodingMode) {
+    if (!u_evolution_mode && !u_slope_mode && !u_shadow_mode && !u_aspect_mode && !u_curvature_mode && !u_edge_mode && !u_contour_mode && !u_flooding_mode) {
         fragColor = color;
         return;
     }
 
     vec4 finalColor = vec4(0.0, 0.0,0.0,0.0);
-    bool needNormal = (slopeMode || aspectMode || shadowMode || edgeMode);
-    bool needCurvature = (curvatureMode);
+    bool needNormal = (u_slope_mode || u_aspect_mode || u_shadow_mode || u_edge_mode);
+    bool needCurvature = (u_curvature_mode);
 
     TerrainData terrainData;
     if (needNormal || needCurvature) {
@@ -310,57 +310,57 @@ void main() {
     }
 
 
-    if (evolutionMode) {
+    if (u_evolution_mode) {
         float height = convertToHeight(color);
-        float normalizedHeight = clamp((height - minHeight) / (maxHeight - minHeight), 0.0, 1.0);
+        float normalizedHeight = clamp((height - u_min_height) / (u_max_height - u_min_height), 0.0, 1.0);
         vec4 terrainColor = getColorFromMap(u_evolutionMap, normalizedHeight);
-        finalColor = mix(finalColor, terrainColor, evolutionAlpha);
+        finalColor = mix(finalColor, terrainColor, u_evolution_alpha);
     }
 
     if (needNormal) {
         vec3 normal = terrainData.normal;
 
-        if (slopeMode) {
+        if (u_slope_mode) {
             float slope = calculateSlope(normal);
             float normalizedSlope = clamp(slope / 90.0, 0.0, 1.0);
             vec4 slopeColor = getColorFromMap(u_slopeMap, normalizedSlope);
-            finalColor = mix(finalColor, slopeColor, slopeAlpha);
-           // NOTE: 放線のデバッグ
+            finalColor = mix(finalColor, slopeColor, u_slope_alpha);
+            // NOTE: 放線のデバッグ
             // vec3 normalizedColor = (normal + 1.0) * 0.5;
             // finalColor = vec4(normalizedColor, 1.0);
         }
 
-        if (aspectMode) {
+        if (u_aspect_mode) {
             float aspect = atan(normal.y, normal.x);
             float normalizedAspect = (aspect + 3.14159265359) / (2.0 * 3.14159265359);
             vec4 aspectColor = getColorFromMap(u_aspectMap, normalizedAspect);
-            finalColor = mix(finalColor, aspectColor, aspectAlpha);
+            finalColor = mix(finalColor, aspectColor, u_aspect_alpha);
         }
 
-        if (shadowMode) {
+        if (u_shadow_mode) {
             vec3 viewDirection = normalize(vec3(0.0, 0.0, 1.0)); // 視線ベクトル
             float highlightStrength = 0.5; // ハイライトの強度
             // 拡散光の計算
-            float diffuse = max(dot(normal, lightDirection), 0.0);
+            float diffuse = max(dot(normal, u_light_direction), 0.0);
 
             // 環境光と拡散光の合成
-            float shadowFactor = ambient + (1.0 - ambient) * diffuse;
-            float shadowAlpha = (1.0 - shadowFactor) * shadowStrength;
+            float shadowFactor = u_ambient + (1.0 - u_ambient) * diffuse;
+            float shadowAlpha = (1.0 - shadowFactor) * u_shadow_strength;
 
             // ハイライトの計算
-            vec3 reflectDir = reflect(-lightDirection, normal); // 反射ベクトル
+            vec3 reflectDir = reflect(-u_light_direction, normal); // 反射ベクトル
             float spec = pow(max(dot(viewDirection, reflectDir), 0.0), 16.0); // スペキュラ成分（光沢の鋭さ）
-            vec3 finalHighlight = highlightStrength * spec * highlightColor.rgb; // ハイライトの最終的な強度と色
+            vec3 finalHighlight = highlightStrength * spec * u_highlight_color.rgb; // ハイライトの最終的な強度と色
 
             // ハイライトと影を重ねる
-            finalColor.rgb = mix(finalColor.rgb, shadowColor.rgb, shadowAlpha); // 影の適用
+            finalColor.rgb = mix(finalColor.rgb, u_shadow_color.rgb, shadowAlpha); // 影の適用
             finalColor.rgb += finalHighlight; // ハイライトの適用
             finalColor.a = finalColor.a * (1.0 - shadowAlpha) + shadowAlpha;
         }
     }
 
     if (needCurvature) {
-        float z = 10.0 * exp2(14.0 - zoomLevel); // ズームレベルに基づくスケーリング係数
+        float z = 10.0 * exp2(14.0 - u_zoom_level); // ズームレベルに基づくスケーリング係数
 
         if (color.a == 0.0) {
             fragColor = vec4(0.0, 0.0, 0.0, 0.0);
@@ -374,14 +374,14 @@ void main() {
         vec4 curvatureColor = vec4(0.0);  // デフォルトで透明
 
         // 山の稜線の処理
-        if (normalizedCurvature >= ridgeThreshold) {
-            float intensity = (normalizedCurvature - ridgeThreshold) / (1.0 - ridgeThreshold);
-            curvatureColor = vec4(ridgeColor.rgb, intensity * curvatureAlpha);
+        if (normalizedCurvature >= u_ridge_threshold) {
+            float intensity = (normalizedCurvature - u_ridge_threshold) / (1.0 - u_ridge_threshold);
+            curvatureColor = vec4(u_ridge_color.rgb, intensity * u_curvature_alpha);
         }
         // 谷の処理
-        else if (normalizedCurvature <= valleyThreshold) {
-            float intensity = (valleyThreshold - normalizedCurvature) / valleyThreshold;
-            curvatureColor = vec4(valleyColor.rgb, intensity * curvatureAlpha);
+        else if (normalizedCurvature <= u_valley_threshold) {
+            float intensity = (u_valley_threshold - normalizedCurvature) / u_valley_threshold;
+            curvatureColor = vec4(u_valley_color.rgb, intensity * u_curvature_alpha);
         }
 
         // アルファブレンディング
@@ -390,35 +390,35 @@ void main() {
     }
 
 
-    if(edgeMode) {
+    if(u_edge_mode) {
 
 
         vec2 e = vec2(1.5/256.0, 0);
         float edgeX = abs(heightMatrix[1][2] - heightMatrix[1][0]); // 左右の高さ差
         float edgeY = abs(heightMatrix[2][1] - heightMatrix[0][1]); // 上下の高さ差
         
-        float z = 0.5 * exp2(zoomLevel - 17.0);
+        float z = 0.5 * exp2(u_zoom_level - 17.0);
         float edgeIntensity = z;
         
-        float edgeStrength = (edgeX + edgeY) * edgeIntensity * userDefinedIntensity;
+        float edgeStrength = (edgeX + edgeY) * edgeIntensity * u_edge_Intensity;
         
         // エッジの透明度を考慮したブレンディング
-        vec4 edge = vec4(edgeColor.rgb, clamp(edgeStrength, 0.0, 0.8) * edgeAlpha);
+        vec4 edge = vec4(u_edge_color.rgb, clamp(edgeStrength, 0.0, 0.8) * u_edge_alpha);
         
         // アルファブレンディング
         finalColor.rgb = mix(finalColor.rgb, edge.rgb, edge.a);
         finalColor.a = max(finalColor.a, edge.a);
     }
 
-    if (contourMode) {
+    if (u_contour_mode) {
               // 等高線の生成
         float height = convertToHeight(color);
-        float normalizedHeight = clamp((height - 0.0) / (contourMaxHeight - 0.0), 0.0, 1.0);
+        float normalizedHeight = clamp((height - 0.0) / (u_contour_max_height - 0.0), 0.0, 1.0);
         float contourLines = createContours(normalizedHeight);
 
         vec2 texelSize = 1.0 / vec2(256.0, 256.0);
-        float heightRight = createContours(clamp(convertToHeight(texture(heightMap, uv + vec2(texelSize.x, 0.0))) / contourMaxHeight, 0.0, 1.0));
-        float heightUp = createContours(clamp(convertToHeight(texture(heightMap, uv + vec2(0.0, texelSize.y))) / contourMaxHeight, 0.0, 1.0));
+        float heightRight = createContours(clamp(convertToHeight(texture(u_height_map, uv + vec2(texelSize.x, 0.0))) / u_contour_max_height, 0.0, 1.0));
+        float heightUp = createContours(clamp(convertToHeight(texture(u_height_map, uv + vec2(0.0, texelSize.y))) / u_contour_max_height, 0.0, 1.0));
 
         // 境界を計算
         float edgeThreshold = 0.01; // 境界を検出するためのしきい値
@@ -426,11 +426,11 @@ void main() {
 
         // 最終的な色の計算
         vec3 col = finalColor.rgb;
-        vec3 outlineColor = contourColor.rgb; // アウトラインの色（黒）
+        vec3 outlineColor = u_contour_color.rgb; // アウトラインの色（黒）
 
          // アウトラインを追加し、ライン以外は透明にする
         if (edge > 0.0) {
-            vec4 finalContourColor = vec4(outlineColor, contourAlpha);
+            vec4 finalContourColor = vec4(outlineColor, u_contour_alpha);
             finalColor.a = max(finalColor.a, finalContourColor.a);
             finalColor.rgb = mix(finalColor.rgb, finalContourColor.rgb, finalContourColor.a);
         }
@@ -438,17 +438,17 @@ void main() {
     }
 
 
-   if (floodingMode) {
+   if (u_flooding_mode) {
     float height = convertToHeight(color);
-    vec4 floodingColor = vec4(0.0, 0.0, 1.0, floodingAlpha); // デフォルトの浸水色
+    vec4 floodingColor = vec4(0.0, 0.0, 1.0, u_flooding_alpha); // デフォルトの浸水色
 
-        if (height < waterLevel) {
+        if (height < u_water_level) {
             // 浸水箇所のテクスチャから色を取得し、floodingAlpha を適用
-            floodingColor = vec4(texture(u_floodingImage, uv).rgb, floodingAlpha);
+            floodingColor = vec4(texture(u_floodingImage, uv).rgb, u_flooding_alpha);
 
             // アルファブレンドによる最終的な色の適用
             finalColor.rgb = mix(finalColor.rgb, floodingColor.rgb, floodingColor.a);
-            finalColor.a = mix(finalColor.a, floodingColor.a, floodingAlpha); // アルファもブレンド
+            finalColor.a = mix(finalColor.a, floodingColor.a, u_flooding_alpha); // アルファもブレンド
         }
     }
 
