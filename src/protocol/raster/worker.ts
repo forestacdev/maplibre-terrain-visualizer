@@ -179,11 +179,11 @@ self.onmessage = async (e) => {
 
         // テクスチャ
         bindTextures(gl, program, {
-            u_height_map: { image: center, type: 'height' },
-            heightMapLeft: { image: left, type: 'height' },
-            heightMapRight: { image: right, type: 'height' },
-            heightMapTop: { image: top, type: 'height' },
-            heightMapBottom: { image: bottom, type: 'height' },
+            u_height_map_center: { image: center, type: 'height' },
+            u_height_map_left: { image: left, type: 'height' },
+            u_height_map_right: { image: right, type: 'height' },
+            u_height_map_top: { image: top, type: 'height' },
+            u_height_map_bottom: { image: bottom, type: 'height' },
             ...(evolution.option.visible.value ? { u_evolutionMap: { image: evolutionColorArray, type: 'colormap' } } : {}),
             ...(slope.option.visible.value ? { u_slopeMap: { image: slopeCorlorArray, type: 'colormap' } } : {}),
             ...(aspect.option.visible.value ? { u_aspectMap: { image: aspectColorArray, type: 'colormap' } } : {}),
