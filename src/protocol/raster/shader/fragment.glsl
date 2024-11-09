@@ -104,168 +104,181 @@ struct TerrainData {
     vec3 normal;
     float curvature;
 };
-mat3 heightMatrix;
+mat3 height_matrix;
 
 TerrainData calculateTerrainData(vec2 uv) {
-    vec2 pixelSize = vec2(1.0) / 256.0;
-    // uv = clamp(uv, vec2(0.0), vec2(1.0) - pixelSize);
 
     TerrainData data;
-    // インデックス番号の9マス: 
-    // [0][0] [0][1] [0][2]
-    // [1][0] [1][1] [1][2]
-    // [2][0] [2][1] [2][2]
+    // 9マスピクセルのインデックス番号 
+    // ----------------------------
+    // | [0][0] | [0][1] | [0][2] |
+    // ----------------------------
+    // | [1][0] | [1][1] | [1][2] |
+    // ----------------------------
+    // | [2][0] | [2][1] | [2][2] |
+    // ----------------------------
 
+    // height_mapの隣接タイル
+    // ----------------------------
+    // |        | top    | 　　　  |
+    // ----------------------------
+    // | left   | center | right  |
+    // ----------------------------
+    // |        | bottom |        |
+    // ----------------------------
 
-   // 高さマップデータの取得、端の場合は隣接テクスチャからサンプル
+    vec2 pixel_size = vec2(1.0) / 256.0;
+
+   // 高さマトリックスの作成
     if(u_only_center){
+        // 中心のテクスチャのみでサンプリング　
         // 左上
-        heightMatrix[0][0] = convertToHeight(texture(
+        height_matrix[0][0] = convertToHeight(texture(
             u_height_map_center,
-            u_only_center ? clamp(uv + vec2(-pixelSize.x, -pixelSize.y), vec2(0.0), vec2(1.0) - pixelSize) :
-            (uv.x <= pixelSize.x && uv.y <= pixelSize.y) ? uv + vec2(1.0 - pixelSize.x, 1.0 - pixelSize.y) :
-            (uv.y <= pixelSize.y) ? uv + vec2(-pixelSize.x, 1.0 - pixelSize.y) :
-            (uv.x <= pixelSize.x) ? uv + vec2(1.0 - pixelSize.x, -pixelSize.y) :
-            uv + vec2(-pixelSize.x, -pixelSize.y)
+            u_only_center ? clamp(uv + vec2(-pixel_size.x, -pixel_size.y), vec2(0.0), vec2(1.0) - pixel_size) :
+            (uv.x <= pixel_size.x && uv.y <= pixel_size.y) ? uv + vec2(1.0 - pixel_size.x, 1.0 - pixel_size.y) :
+            (uv.y <= pixel_size.y) ? uv + vec2(-pixel_size.x, 1.0 - pixel_size.y) :
+            (uv.x <= pixel_size.x) ? uv + vec2(1.0 - pixel_size.x, -pixel_size.y) :
+            uv + vec2(-pixel_size.x, -pixel_size.y)
         ));
 
         // 上
-        heightMatrix[0][1] = convertToHeight(texture(
+        height_matrix[0][1] = convertToHeight(texture(
             u_height_map_center,
-            u_only_center ? clamp(uv + vec2(0.0, -pixelSize.y), vec2(0.0), vec2(1.0) - pixelSize) :
-            (uv.y <= pixelSize.y) ? uv + vec2(0.0, 1.0 - pixelSize.y) :
-            uv + vec2(0.0, -pixelSize.y)
+            u_only_center ? clamp(uv + vec2(0.0, -pixel_size.y), vec2(0.0), vec2(1.0) - pixel_size) :
+            (uv.y <= pixel_size.y) ? uv + vec2(0.0, 1.0 - pixel_size.y) :
+            uv + vec2(0.0, -pixel_size.y)
         ));
 
         // 右上
-        heightMatrix[0][2] = convertToHeight(texture(
+        height_matrix[0][2] = convertToHeight(texture(
             u_height_map_center,
-            u_only_center ? clamp(uv + vec2(pixelSize.x, -pixelSize.y), vec2(0.0), vec2(1.0) - pixelSize) :
-            (uv.x >= 1.0 - pixelSize.x && uv.y <= pixelSize.y) ? uv + vec2(-1.0 + pixelSize.x, 1.0 - pixelSize.y) :
-            (uv.y <= pixelSize.y) ? uv + vec2(pixelSize.x, 1.0 - pixelSize.y) :
-            (uv.x >= 1.0 - pixelSize.x) ? uv + vec2(-1.0 + pixelSize.x, -pixelSize.y) :
-            uv + vec2(pixelSize.x, -pixelSize.y)
+            u_only_center ? clamp(uv + vec2(pixel_size.x, -pixel_size.y), vec2(0.0), vec2(1.0) - pixel_size) :
+            (uv.x >= 1.0 - pixel_size.x && uv.y <= pixel_size.y) ? uv + vec2(-1.0 + pixel_size.x, 1.0 - pixel_size.y) :
+            (uv.y <= pixel_size.y) ? uv + vec2(pixel_size.x, 1.0 - pixel_size.y) :
+            (uv.x >= 1.0 - pixel_size.x) ? uv + vec2(-1.0 + pixel_size.x, -pixel_size.y) :
+            uv + vec2(pixel_size.x, -pixel_size.y)
         ));
 
         // 左
-        heightMatrix[1][0] = convertToHeight(texture(
+        height_matrix[1][0] = convertToHeight(texture(
             u_height_map_center,
-            u_only_center ? clamp(uv + vec2(-pixelSize.x, 0.0), vec2(0.0), vec2(1.0) - pixelSize) :
-            (uv.x <= pixelSize.x) ? uv + vec2(1.0 - pixelSize.x, 0.0) :
-            uv + vec2(-pixelSize.x, 0.0)
+            u_only_center ? clamp(uv + vec2(-pixel_size.x, 0.0), vec2(0.0), vec2(1.0) - pixel_size) :
+            (uv.x <= pixel_size.x) ? uv + vec2(1.0 - pixel_size.x, 0.0) :
+            uv + vec2(-pixel_size.x, 0.0)
         ));
 
         // 中央
-        heightMatrix[1][1] = convertToHeight(texture(u_height_map_center, uv));
+        height_matrix[1][1] = convertToHeight(texture(u_height_map_center, uv));
 
         // 右
-        heightMatrix[1][2] = convertToHeight(texture(
+        height_matrix[1][2] = convertToHeight(texture(
             u_height_map_center,
-            u_only_center ? clamp(uv + vec2(pixelSize.x, 0.0), vec2(0.0), vec2(1.0) - pixelSize) :
-            (uv.x >= 1.0 - pixelSize.x) ? uv + vec2(-1.0 + pixelSize.x, 0.0) :
-            uv + vec2(pixelSize.x, 0.0)
+            u_only_center ? clamp(uv + vec2(pixel_size.x, 0.0), vec2(0.0), vec2(1.0) - pixel_size) :
+            (uv.x >= 1.0 - pixel_size.x) ? uv + vec2(-1.0 + pixel_size.x, 0.0) :
+            uv + vec2(pixel_size.x, 0.0)
         ));
 
         // 左下
-        heightMatrix[2][0] = convertToHeight(texture(
+        height_matrix[2][0] = convertToHeight(texture(
             u_height_map_center,
-            u_only_center ? clamp(uv + vec2(-pixelSize.x, pixelSize.y), vec2(0.0), vec2(1.0) - pixelSize) :
-            (uv.x <= pixelSize.x && uv.y >= 1.0 - pixelSize.y) ? uv + vec2(1.0 - pixelSize.x, -1.0 + pixelSize.y) :
-            (uv.y >= 1.0 - pixelSize.y) ? uv + vec2(-pixelSize.x, -1.0 + pixelSize.y) :
-            (uv.x <= pixelSize.x) ? uv + vec2(1.0 - pixelSize.x, pixelSize.y) :
-            uv + vec2(-pixelSize.x, pixelSize.y)
+            u_only_center ? clamp(uv + vec2(-pixel_size.x, pixel_size.y), vec2(0.0), vec2(1.0) - pixel_size) :
+            (uv.x <= pixel_size.x && uv.y >= 1.0 - pixel_size.y) ? uv + vec2(1.0 - pixel_size.x, -1.0 + pixel_size.y) :
+            (uv.y >= 1.0 - pixel_size.y) ? uv + vec2(-pixel_size.x, -1.0 + pixel_size.y) :
+            (uv.x <= pixel_size.x) ? uv + vec2(1.0 - pixel_size.x, pixel_size.y) :
+            uv + vec2(-pixel_size.x, pixel_size.y)
         ));
 
         // 下
-        heightMatrix[2][1] = convertToHeight(texture(
+        height_matrix[2][1] = convertToHeight(texture(
             u_height_map_center,
-            u_only_center ? clamp(uv + vec2(0.0, pixelSize.y), vec2(0.0), vec2(1.0) - pixelSize) :
-            (uv.y >= 1.0 - pixelSize.y) ? uv + vec2(0.0, -1.0 + pixelSize.y) :
-            uv + vec2(0.0, pixelSize.y)
+            u_only_center ? clamp(uv + vec2(0.0, pixel_size.y), vec2(0.0), vec2(1.0) - pixel_size) :
+            (uv.y >= 1.0 - pixel_size.y) ? uv + vec2(0.0, -1.0 + pixel_size.y) :
+            uv + vec2(0.0, pixel_size.y)
         ));
 
         // 右下
-        heightMatrix[2][2] = convertToHeight(texture(
+        height_matrix[2][2] = convertToHeight(texture(
             u_height_map_center,
-            u_only_center ? clamp(uv + vec2(pixelSize.x, pixelSize.y), vec2(0.0), vec2(1.0) - pixelSize) :
-            (uv.x >= 1.0 - pixelSize.x && uv.y >= 1.0 - pixelSize.y) ? uv + vec2(-1.0 + pixelSize.x, -1.0 + pixelSize.y) :
-            (uv.y >= 1.0 - pixelSize.y) ? uv + vec2(pixelSize.x, -1.0 + pixelSize.y) :
-            (uv.x >= 1.0 - pixelSize.x) ? uv + vec2(-1.0 + pixelSize.x, pixelSize.y) :
-            uv + vec2(pixelSize.x, pixelSize.y)
+            u_only_center ? clamp(uv + vec2(pixel_size.x, pixel_size.y), vec2(0.0), vec2(1.0) - pixel_size) :
+            (uv.x >= 1.0 - pixel_size.x && uv.y >= 1.0 - pixel_size.y) ? uv + vec2(-1.0 + pixel_size.x, -1.0 + pixel_size.y) :
+            (uv.y >= 1.0 - pixel_size.y) ? uv + vec2(pixel_size.x, -1.0 + pixel_size.y) :
+            (uv.x >= 1.0 - pixel_size.x) ? uv + vec2(-1.0 + pixel_size.x, pixel_size.y) :
+            uv + vec2(pixel_size.x, pixel_size.y)
         ));
 
     } else {
-        // １つのテクスチャからサンプリング
+        // 端の場合は隣接テクスチャからサンプル
         // 左上
-        heightMatrix[0][0] = convertToHeight(
-            (uv.x <= pixelSize.x && uv.y <= pixelSize.y) ? texture(u_height_map_left, uv + vec2(1.0 - pixelSize.x, 1.0 - pixelSize.y)) :
-            (uv.y <= pixelSize.y) ? texture(u_height_map_top, uv + vec2(-pixelSize.x, 1.0 - pixelSize.y)) :
-            (uv.x <= pixelSize.x) ? texture(u_height_map_left, uv + vec2(1.0 - pixelSize.x, -pixelSize.y)) :
-            texture(u_height_map_center, uv + vec2(-pixelSize.x, -pixelSize.y))
+        height_matrix[0][0] = convertToHeight(
+            (uv.x <= pixel_size.x && uv.y <= pixel_size.y) ? texture(u_height_map_left, uv + vec2(1.0 - pixel_size.x, 1.0 - pixel_size.y)) :
+            (uv.y <= pixel_size.y) ? texture(u_height_map_top, uv + vec2(-pixel_size.x, 1.0 - pixel_size.y)) :
+            (uv.x <= pixel_size.x) ? texture(u_height_map_left, uv + vec2(1.0 - pixel_size.x, -pixel_size.y)) :
+            texture(u_height_map_center, uv + vec2(-pixel_size.x, -pixel_size.y))
         );
 
         // 上
-        heightMatrix[0][1] = convertToHeight(
-            (uv.y <= pixelSize.y) ? texture(u_height_map_top, uv + vec2(0.0, 1.0 - pixelSize.y)) :
-            texture(u_height_map_center, uv + vec2(0.0, -pixelSize.y))
+        height_matrix[0][1] = convertToHeight(
+            (uv.y <= pixel_size.y) ? texture(u_height_map_top, uv + vec2(0.0, 1.0 - pixel_size.y)) :
+            texture(u_height_map_center, uv + vec2(0.0, -pixel_size.y))
         );
 
         // 右上
-        heightMatrix[0][2] = convertToHeight(
-            (uv.x >= 1.0 - pixelSize.x && uv.y <= pixelSize.y) ? texture(u_height_map_right, uv + vec2(-1.0 + pixelSize.x, 1.0 - pixelSize.y)) :
-            (uv.y <= pixelSize.y) ? texture(u_height_map_top, uv + vec2(pixelSize.x, 1.0 - pixelSize.y)) :
-            (uv.x >= 1.0 - pixelSize.x) ? texture(u_height_map_right, uv + vec2(-1.0 + pixelSize.x, -pixelSize.y)) :
-            texture(u_height_map_center, uv + vec2(pixelSize.x, -pixelSize.y))
+        height_matrix[0][2] = convertToHeight(
+            (uv.x >= 1.0 - pixel_size.x && uv.y <= pixel_size.y) ? texture(u_height_map_right, uv + vec2(-1.0 + pixel_size.x, 1.0 - pixel_size.y)) :
+            (uv.y <= pixel_size.y) ? texture(u_height_map_top, uv + vec2(pixel_size.x, 1.0 - pixel_size.y)) :
+            (uv.x >= 1.0 - pixel_size.x) ? texture(u_height_map_right, uv + vec2(-1.0 + pixel_size.x, -pixel_size.y)) :
+            texture(u_height_map_center, uv + vec2(pixel_size.x, -pixel_size.y))
         );
 
         // 左
-        heightMatrix[1][0] = convertToHeight(
-            (uv.x <= pixelSize.x) ? texture(u_height_map_left, uv + vec2(1.0 - pixelSize.x, 0.0)) :
-            texture(u_height_map_center, uv + vec2(-pixelSize.x, 0.0))
+        height_matrix[1][0] = convertToHeight(
+            (uv.x <= pixel_size.x) ? texture(u_height_map_left, uv + vec2(1.0 - pixel_size.x, 0.0)) :
+            texture(u_height_map_center, uv + vec2(-pixel_size.x, 0.0))
         );
 
         // 中央
-        heightMatrix[1][1] = convertToHeight(texture(u_height_map_center, uv));
+        height_matrix[1][1] = convertToHeight(texture(u_height_map_center, uv));
 
         // 右
-        heightMatrix[1][2] = convertToHeight(
-            (uv.x >= 1.0 - pixelSize.x) ? texture(u_height_map_right, uv + vec2(-1.0 + pixelSize.x, 0.0)) :
-            texture(u_height_map_center, uv + vec2(pixelSize.x, 0.0))
+        height_matrix[1][2] = convertToHeight(
+            (uv.x >= 1.0 - pixel_size.x) ? texture(u_height_map_right, uv + vec2(-1.0 + pixel_size.x, 0.0)) :
+            texture(u_height_map_center, uv + vec2(pixel_size.x, 0.0))
         );
 
         // 左下
-        heightMatrix[2][0] = convertToHeight(
-            (uv.x <= pixelSize.x && uv.y >= 1.0 - pixelSize.y) ? texture(u_height_map_left, uv + vec2(1.0 - pixelSize.x, -1.0 + pixelSize.y)) :
-            (uv.y >= 1.0 - pixelSize.y) ? texture(u_height_map_bottom, uv + vec2(-pixelSize.x, -1.0 + pixelSize.y)) :
-            (uv.x <= pixelSize.x) ? texture(u_height_map_left, uv + vec2(1.0 - pixelSize.x, pixelSize.y)) :
-            texture(u_height_map_center, uv + vec2(-pixelSize.x, pixelSize.y))
+        height_matrix[2][0] = convertToHeight(
+            (uv.x <= pixel_size.x && uv.y >= 1.0 - pixel_size.y) ? texture(u_height_map_left, uv + vec2(1.0 - pixel_size.x, -1.0 + pixel_size.y)) :
+            (uv.y >= 1.0 - pixel_size.y) ? texture(u_height_map_bottom, uv + vec2(-pixel_size.x, -1.0 + pixel_size.y)) :
+            (uv.x <= pixel_size.x) ? texture(u_height_map_left, uv + vec2(1.0 - pixel_size.x, pixel_size.y)) :
+            texture(u_height_map_center, uv + vec2(-pixel_size.x, pixel_size.y))
         );
 
         // 下
-        heightMatrix[2][1] = convertToHeight(
-            (uv.y >= 1.0 - pixelSize.y) ? texture(u_height_map_bottom, uv + vec2(0.0, -1.0 + pixelSize.y)) :
-            texture(u_height_map_center, uv + vec2(0.0, pixelSize.y))
+        height_matrix[2][1] = convertToHeight(
+            (uv.y >= 1.0 - pixel_size.y) ? texture(u_height_map_bottom, uv + vec2(0.0, -1.0 + pixel_size.y)) :
+            texture(u_height_map_center, uv + vec2(0.0, pixel_size.y))
         );
 
         // 右下
-        heightMatrix[2][2] = convertToHeight(
-            (uv.x >= 1.0 - pixelSize.x && uv.y >= 1.0 - pixelSize.y) ? texture(u_height_map_right, uv + vec2(-1.0 + pixelSize.x, -1.0 + pixelSize.y)) :
-            (uv.y >= 1.0 - pixelSize.y) ? texture(u_height_map_bottom, uv + vec2(pixelSize.x, -1.0 + pixelSize.y)) :
-            (uv.x >= 1.0 - pixelSize.x) ? texture(u_height_map_right, uv + vec2(-1.0 + pixelSize.x, pixelSize.y)) :
-            texture(u_height_map_center, uv + vec2(pixelSize.x, pixelSize.y))
+        height_matrix[2][2] = convertToHeight(
+            (uv.x >= 1.0 - pixel_size.x && uv.y >= 1.0 - pixel_size.y) ? texture(u_height_map_right, uv + vec2(-1.0 + pixel_size.x, -1.0 + pixel_size.y)) :
+            (uv.y >= 1.0 - pixel_size.y) ? texture(u_height_map_bottom, uv + vec2(pixel_size.x, -1.0 + pixel_size.y)) :
+            (uv.x >= 1.0 - pixel_size.x) ? texture(u_height_map_right, uv + vec2(-1.0 + pixel_size.x, pixel_size.y)) :
+            texture(u_height_map_center, uv + vec2(pixel_size.x, pixel_size.y))
         );
    }
 
     // 法線の計算
-    data.normal.x = (heightMatrix[0][0] + heightMatrix[0][1] + heightMatrix[0][2]) - 
-                    (heightMatrix[2][0] + heightMatrix[2][1] + heightMatrix[2][2]);
-    data.normal.y = (heightMatrix[0][0] + heightMatrix[1][0] + heightMatrix[2][0]) - 
-                    (heightMatrix[0][2] + heightMatrix[1][2] + heightMatrix[2][2]);
-    data.normal.z = 2.0 * pixelSize.x * 256.0; // スケーリング係数
+    data.normal.x = (height_matrix[0][0] + height_matrix[0][1] + height_matrix[0][2]) - 
+                    (height_matrix[2][0] + height_matrix[2][1] + height_matrix[2][2]);
+    data.normal.y = (height_matrix[0][0] + height_matrix[1][0] + height_matrix[2][0]) - 
+                    (height_matrix[0][2] + height_matrix[1][2] + height_matrix[2][2]);
+    data.normal.z = 2.0 * pixel_size.x * 256.0; // スケーリング係数
     data.normal = normalize(data.normal);
 
     // 曲率の計算
-    data.curvature = conv(conv_c, heightMatrix);
+    data.curvature = conv(conv_c, height_matrix);
 
     return data;
 }
@@ -394,8 +407,8 @@ void main() {
 
 
         vec2 e = vec2(1.5/256.0, 0);
-        float edgeX = abs(heightMatrix[1][2] - heightMatrix[1][0]); // 左右の高さ差
-        float edgeY = abs(heightMatrix[2][1] - heightMatrix[0][1]); // 上下の高さ差
+        float edgeX = abs(height_matrix[1][2] - height_matrix[1][0]); // 左右の高さ差
+        float edgeY = abs(height_matrix[2][1] - height_matrix[0][1]); // 上下の高さ差
         
         float z = 0.5 * exp2(u_zoom_level - 17.0);
         float edgeIntensity = z;
