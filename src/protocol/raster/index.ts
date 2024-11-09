@@ -109,13 +109,12 @@ class WorkerProtocol {
         controller: AbortController,
     ): Promise<{ data: Uint8Array }> {
         return new Promise((resolve, reject) => {
-            const center = images.center;
-            const tileId = center.tileId;
-
-            const left = images.left;
-            const right = images.right;
-            const top = images.top;
-            const bottom = images.bottom;
+            const center = images.center; // 中央のタイル
+            const tileId = center.tileId; // ワーカー用ID
+            const left = images.left; // 左のタイル
+            const right = images.right; // 右のタイル
+            const top = images.top; // 上のタイル
+            const bottom = images.bottom; // 下のタイル
             this.pendingRequests.set(tileId, { resolve, reject, controller });
 
             const demTypeNumber = DEM_DATA_TYPE[demType as DemDataTypeKey];
