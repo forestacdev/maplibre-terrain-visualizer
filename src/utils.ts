@@ -211,6 +211,17 @@ export type DemDataTypeKey = keyof DemDataType;
 
 export const demLayers: DemLayer[] = [
     {
+        id: 'test',
+        name: 'テスト　地理院タイル',
+        tiles: ['http://localhost:5173/test_gsi_tile.png'],
+        tileSize: 256,
+        minzoom: 1,
+        maxzoom: 14,
+        attribution: '国土地理院',
+        bbox: [122.935, 20.425, 153.986, 45.551],
+        demType: 'gsi',
+    },
+    {
         id: 'dem_10b',
         name: '基盤地図情報数値標高モデル DEM10B',
         tiles: ['https://cyberjapandata.gsi.go.jp/xyz/dem_png/{z}/{x}/{y}.png'],
