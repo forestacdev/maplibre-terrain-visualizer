@@ -1,7 +1,6 @@
 import { DEM_DATA_TYPE, demEntry, textureData, tileOptions } from '../../utils';
 import type { DemDataTypeKey, textureDataKey } from '../../utils';
-import colormap from 'colormap';
-import { TileCache } from '../image';
+import { TileCache, ColorMapCache } from '../image';
 import { HAS_DEBUG_TILE, debugTileImage } from '../debug';
 
 type TileImageData = { [position: string]: { tileId: string; image: ImageBitmap } };
@@ -17,56 +16,15 @@ class WorkerProtocol {
         }
     >;
     private tileCache: TileCache;
+    private colorMapCache: ColorMapCache;
 
     constructor(worker: Worker) {
         this.worker = worker;
         this.pendingRequests = new Map();
         this.tileCache = TileCache.getInstance(); // シングルトンインスタンスの取得
+        this.colorMapCache = new ColorMapCache();
         this.worker.addEventListener('message', this.handleMessage);
         this.worker.addEventListener('error', this.handleError);
-    }
-
-    private colorMapCache: { [key: string]: Uint8Array } = {};
-    private createColorArray(colorMapName: string, reverse: boolean = false): Uint8Array {
-        // reverse フラグを含めてキャッシュキーを作成
-        const cacheKey = `${colorMapName}_${reverse ? 'reversed' : 'normal'}`;
-
-        if (this.colorMapCache[cacheKey]) {
-            return this.colorMapCache[cacheKey];
-        }
-
-        const width = 256;
-        const pixels = new Uint8Array(width * 3); // RGBのみの3チャンネルデータ
-
-        // オプションオブジェクトを事前に作成して再利用
-        const options = {
-            colormap: colorMapName,
-            nshades: width,
-            format: 'rgb', // RGBAからRGBに変更
-            alpha: 1,
-        };
-
-        // colormapの結果を利用
-        let colors = colormap(options as any);
-
-        // reverse が true の場合、色の配列を反転
-        if (reverse) {
-            colors = colors.reverse();
-        }
-
-        // TypedArrayの直接操作によるRGBデータの格納
-        let ptr = 0;
-        for (let i = 0; i < width; i++) {
-            const color = colors[i] as number[];
-            pixels[ptr++] = color[0];
-            pixels[ptr++] = color[1];
-            pixels[ptr++] = color[2];
-        }
-
-        // キャッシュに格納して再利用可能にする
-        this.colorMapCache[cacheKey] = pixels;
-
-        return pixels;
     }
 
     private floodingImageCache: { [key: string]: ImageBitmap } = {};
@@ -176,9 +134,9 @@ class WorkerProtocol {
 
             const demTypeNumber = DEM_DATA_TYPE[demType as DemDataTypeKey];
 
-            const evolutionColorArray = this.createColorArray(demEntry.uniformsData.evolution.option.colorMap.value, demEntry.uniformsData.evolution.option.colorMap.reverse);
-            const slopeCorlorArray = this.createColorArray(demEntry.uniformsData.slope.option.colorMap.value, demEntry.uniformsData.slope.option.colorMap.reverse);
-            const aspectColorArray = this.createColorArray(demEntry.uniformsData.aspect.option.colorMap.value, demEntry.uniformsData.aspect.option.colorMap.reverse);
+            const evolutionColorArray = this.colorMapCache.createColorArray(demEntry.uniformsData.evolution.option.colorMap.value, demEntry.uniformsData.evolution.option.colorMap.reverse);
+            const slopeCorlorArray = this.colorMapCache.createColorArray(demEntry.uniformsData.slope.option.colorMap.value, demEntry.uniformsData.slope.option.colorMap.reverse);
+            const aspectColorArray = this.colorMapCache.createColorArray(demEntry.uniformsData.aspect.option.colorMap.value, demEntry.uniformsData.aspect.option.colorMap.reverse);
 
             this.worker.postMessage({
                 tileId,

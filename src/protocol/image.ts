@@ -1,3 +1,6 @@
+import colormap from 'colormap';
+
+// タイル画像のキャッシュ
 export class TileCache {
     private static instance: TileCache;
     private cache: Map<string, ImageBitmap>;
@@ -30,7 +33,6 @@ export class TileCache {
                 // リクエストがキャンセルされた場合はエラーをスロー
                 throw error;
             } else {
-                console.error(`Failed to load image from ${src}: ${error}`);
                 // 他のエラー時にはプレースホルダー画像を返す
                 return await createImageBitmap(new ImageData(1, 1));
             }
@@ -67,5 +69,61 @@ export class TileCache {
     clear(): void {
         this.cache.clear();
         this.cacheOrder = [];
+    }
+}
+
+// カラーマップのキャッシュ
+export class ColorMapCache {
+    private cache: Map<string, Uint8Array>;
+    public constructor() {
+        this.cache = new Map();
+    }
+    public createColorArray(colorMapName: string, reverse: boolean = false): Uint8Array {
+        // reverse フラグを含めてキャッシュキーを作成
+        const cacheKey = `${colorMapName}_${reverse ? 'reversed' : 'normal'}`;
+
+        if (this.cache.has(cacheKey)) {
+            return this.cache.get(cacheKey) as Uint8Array;
+        }
+
+        const width = 256;
+        const pixels = new Uint8Array(width * 3); // RGBのみの3チャンネルデータ
+
+        // オプションオブジェクトを作成
+        const options = {
+            colormap: colorMapName,
+            nshades: width,
+            format: 'rgb', // RGBAからRGBに変更
+            alpha: 1,
+        };
+
+        let colors = colormap(options as any);
+
+        // reverse が true の場合、色の配列を反転
+        if (reverse) {
+            colors = colors.reverse();
+        }
+
+        // RGBデータの格納
+        let ptr = 0;
+        for (let i = 0; i < width; i++) {
+            const color = colors[i] as number[];
+            pixels[ptr++] = color[0];
+            pixels[ptr++] = color[1];
+            pixels[ptr++] = color[2];
+        }
+
+        // キャッシュに格納して再利用可能にする
+        this.cache.set(cacheKey, pixels);
+
+        return pixels;
+    }
+
+    add(cacheKey: string, pixels: Uint8Array): void {
+        this.cache.set(cacheKey, pixels);
+    }
+
+    get(cacheKey: string): Uint8Array | undefined {
+        return this.cache.get(cacheKey);
     }
 }
