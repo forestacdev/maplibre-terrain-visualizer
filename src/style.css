@@ -23,7 +23,7 @@ body {
     --input-padding: 4px 8px;
     --slider-input-width: 4%;
     --color-input-width: 4%;
-    max-height: calc(100vh - 100px);
+    max-height: calc(100vh - 50px);
 }
 
 #debugCanvas {
@@ -34,4 +34,14 @@ body {
     margin: 10px;
     width: 256px;
     height: 256px;
+}
+
+@media (max-width: 768px) {
+    #gui {
+        margin: 0px;
+        opacity: 0.9;
+    }
+
+    .lil-gui {
+    }
 }
