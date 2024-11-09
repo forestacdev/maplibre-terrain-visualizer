@@ -51,7 +51,7 @@ uniform vec4 u_contour_color;
 
 uniform float u_ridge_threshold;
 uniform float u_valley_threshold;
-uniform float u_edge_Intensity;
+uniform float u_edge_intensity;
 uniform float u_contour_count;
 uniform float u_water_level;
 
@@ -293,12 +293,12 @@ float calculateSlope(vec3 normal) {
 
 // 等高線を生成する関数 
 float createContours(float height) {
-    float palNum = u_contour_count; // 等高線の数
-    const float smoothFactor = 0.5; // 滑らかさの制御
+    float pal_num = u_contour_count; // 等高線の数
+    const float smooth_factor = 0.5; // 滑らかさの制御
 
     // スムーズな等高線の生成
     float n = height;
-    float contour = n * (1.0 - smoothFactor) + clamp(floor(n * (palNum - 0.001)) / (palNum - 1.0), 0.0, 1.0) * smoothFactor;
+    float contour = n * (1.0 - smooth_factor) + clamp(floor(n * (pal_num - 0.001)) / (pal_num - 1.0), 0.0, 1.0) * smooth_factor;
 
     return contour;
 }
@@ -313,66 +313,66 @@ void main() {
         return;
     }
 
-    vec4 finalColor = vec4(0.0, 0.0,0.0,0.0);
-    bool needNormal = (u_slope_mode || u_aspect_mode || u_shadow_mode || u_edge_mode);
-    bool needCurvature = (u_curvature_mode);
+    vec4 final_color = vec4(0.0, 0.0,0.0,0.0);
+    bool need_normal = (u_slope_mode || u_aspect_mode || u_shadow_mode || u_edge_mode);
+    bool need_curvature = (u_curvature_mode);
 
-    TerrainData terrainData;
-    if (needNormal || needCurvature) {
-        terrainData = calculateTerrainData(uv);
+    TerrainData terrain_data;
+    if (need_normal || need_curvature) {
+        terrain_data = calculateTerrainData(uv);
     }
 
 
     if (u_evolution_mode) {
         float height = convertToHeight(color);
-        float normalizedHeight = clamp((height - u_min_height) / (u_max_height - u_min_height), 0.0, 1.0);
-        vec4 terrainColor = getColorFromMap(u_evolutionMap, normalizedHeight);
-        finalColor = mix(finalColor, terrainColor, u_evolution_alpha);
+        float normalized_height = clamp((height - u_min_height) / (u_max_height - u_min_height), 0.0, 1.0);
+        vec4 terrain_color = getColorFromMap(u_evolutionMap, normalized_height);
+        final_color = mix(final_color, terrain_color, u_evolution_alpha);
     }
 
-    if (needNormal) {
-        vec3 normal = terrainData.normal;
+    if (need_normal) {
+        vec3 normal = terrain_data.normal;
 
         if (u_slope_mode) {
             float slope = calculateSlope(normal);
-            float normalizedSlope = clamp(slope / 90.0, 0.0, 1.0);
-            vec4 slopeColor = getColorFromMap(u_slopeMap, normalizedSlope);
-            finalColor = mix(finalColor, slopeColor, u_slope_alpha);
+            float normalized_slope = clamp(slope / 90.0, 0.0, 1.0);
+            vec4 slope_color = getColorFromMap(u_slopeMap, normalized_slope);
+            final_color = mix(final_color, slope_color, u_slope_alpha);
             // NOTE: 放線のデバッグ
             // vec3 normalizedColor = (normal + 1.0) * 0.5;
-            // finalColor = vec4(normalizedColor, 1.0);
+            // final_color = vec4(normalizedColor, 1.0);
         }
 
         if (u_aspect_mode) {
             float aspect = atan(normal.y, normal.x);
-            float normalizedAspect = (aspect + 3.14159265359) / (2.0 * 3.14159265359);
-            vec4 aspectColor = getColorFromMap(u_aspectMap, normalizedAspect);
-            finalColor = mix(finalColor, aspectColor, u_aspect_alpha);
+            float normalized_aspect = (aspect + 3.14159265359) / (2.0 * 3.14159265359);
+            vec4 aspect_color = getColorFromMap(u_aspectMap, normalized_aspect);
+            final_color = mix(final_color, aspect_color, u_aspect_alpha);
         }
 
         if (u_shadow_mode) {
-            vec3 viewDirection = normalize(vec3(0.0, 0.0, 1.0)); // 視線ベクトル
-            float highlightStrength = 0.5; // ハイライトの強度
+            vec3 view_direction = normalize(vec3(0.0, 0.0, 1.0)); // 視線ベクトル
+            float highlight_strength = 0.5; // ハイライトの強度
             // 拡散光の計算
             float diffuse = max(dot(normal, u_light_direction), 0.0);
 
             // 環境光と拡散光の合成
-            float shadowFactor = u_ambient + (1.0 - u_ambient) * diffuse;
-            float shadowAlpha = (1.0 - shadowFactor) * u_shadow_strength;
+            float shadow_factor = u_ambient + (1.0 - u_ambient) * diffuse;
+            float shadow_alpha = (1.0 - shadow_factor) * u_shadow_strength;
 
             // ハイライトの計算
-            vec3 reflectDir = reflect(-u_light_direction, normal); // 反射ベクトル
-            float spec = pow(max(dot(viewDirection, reflectDir), 0.0), 16.0); // スペキュラ成分（光沢の鋭さ）
-            vec3 finalHighlight = highlightStrength * spec * u_highlight_color.rgb; // ハイライトの最終的な強度と色
+            vec3 reflect_dir = reflect(-u_light_direction, normal); // 反射ベクトル
+            float spec = pow(max(dot(view_direction, reflect_dir), 0.0), 16.0); // スペキュラ成分（光沢の鋭さ）
+            vec3 final_highlight = highlight_strength * spec * u_highlight_color.rgb; // ハイライトの最終的な強度と色
 
             // ハイライトと影を重ねる
-            finalColor.rgb = mix(finalColor.rgb, u_shadow_color.rgb, shadowAlpha); // 影の適用
-            finalColor.rgb += finalHighlight; // ハイライトの適用
-            finalColor.a = finalColor.a * (1.0 - shadowAlpha) + shadowAlpha;
+            final_color.rgb = mix(final_color.rgb, u_shadow_color.rgb, shadow_alpha); // 影の適用
+            final_color.rgb += final_highlight; // ハイライトの適用
+            final_color.a = final_color.a * (1.0 - shadow_alpha) + shadow_alpha;
         }
     }
 
-    if (needCurvature) {
+    if (need_curvature) {
         float z = 10.0 * exp2(14.0 - u_zoom_level); // ズームレベルに基づくスケーリング係数
 
         if (color.a == 0.0) {
@@ -380,26 +380,26 @@ void main() {
             return;
         }
 
-        float curvature = terrainData.curvature;
-        float scaledCurvature = terrainData.curvature / z;
-        float normalizedCurvature = clamp((scaledCurvature + 1.0) / 2.0, 0.0, 1.0);
+        float curvature = terrain_data.curvature;
+        float scaled_curvature = terrain_data.curvature / z;
+        float normalized_curvature = clamp((scaled_curvature + 1.0) / 2.0, 0.0, 1.0);
 
-        vec4 curvatureColor = vec4(0.0);  // デフォルトで透明
+        vec4 curvature_color = vec4(0.0);  // デフォルトで透明
 
         // 山の稜線の処理
-        if (normalizedCurvature >= u_ridge_threshold) {
-            float intensity = (normalizedCurvature - u_ridge_threshold) / (1.0 - u_ridge_threshold);
-            curvatureColor = vec4(u_ridge_color.rgb, intensity * u_curvature_alpha);
+        if (normalized_curvature >= u_ridge_threshold) {
+            float intensity = (normalized_curvature - u_ridge_threshold) / (1.0 - u_ridge_threshold);
+            curvature_color = vec4(u_ridge_color.rgb, intensity * u_curvature_alpha);
         }
         // 谷の処理
-        else if (normalizedCurvature <= u_valley_threshold) {
-            float intensity = (u_valley_threshold - normalizedCurvature) / u_valley_threshold;
-            curvatureColor = vec4(u_valley_color.rgb, intensity * u_curvature_alpha);
+        else if (normalized_curvature <= u_valley_threshold) {
+            float intensity = (u_valley_threshold - normalized_curvature) / u_valley_threshold;
+            curvature_color = vec4(u_valley_color.rgb, intensity * u_curvature_alpha);
         }
 
         // アルファブレンディング
-        finalColor.rgb = mix(finalColor.rgb, curvatureColor.rgb, curvatureColor.a);
-        finalColor.a = max(finalColor.a, curvatureColor.a);
+        final_color.rgb = mix(final_color.rgb, curvature_color.rgb, curvature_color.a);
+        final_color.a = max(final_color.a, curvature_color.a);
     }
 
 
@@ -407,45 +407,45 @@ void main() {
 
 
         vec2 e = vec2(1.5/256.0, 0);
-        float edgeX = abs(height_matrix[1][2] - height_matrix[1][0]); // 左右の高さ差
-        float edgeY = abs(height_matrix[2][1] - height_matrix[0][1]); // 上下の高さ差
+        float edge_x = abs(height_matrix[1][2] - height_matrix[1][0]); // 左右の高さ差
+        float edge_y = abs(height_matrix[2][1] - height_matrix[0][1]); // 上下の高さ差
         
         float z = 0.5 * exp2(u_zoom_level - 17.0);
-        float edgeIntensity = z;
+        float edge_intensity = z;
         
-        float edgeStrength = (edgeX + edgeY) * edgeIntensity * u_edge_Intensity;
+        float edge_strength = (edge_x + edge_y) * edge_intensity * u_edge_intensity;
         
         // エッジの透明度を考慮したブレンディング
-        vec4 edge = vec4(u_edge_color.rgb, clamp(edgeStrength, 0.0, 0.8) * u_edge_alpha);
+        vec4 edge = vec4(u_edge_color.rgb, clamp(edge_strength, 0.0, 0.8) * u_edge_alpha);
         
         // アルファブレンディング
-        finalColor.rgb = mix(finalColor.rgb, edge.rgb, edge.a);
-        finalColor.a = max(finalColor.a, edge.a);
+        final_color.rgb = mix(final_color.rgb, edge.rgb, edge.a);
+        final_color.a = max(final_color.a, edge.a);
     }
 
     if (u_contour_mode) {
               // 等高線の生成
         float height = convertToHeight(color);
-        float normalizedHeight = clamp((height - 0.0) / (u_contour_max_height - 0.0), 0.0, 1.0);
-        float contourLines = createContours(normalizedHeight);
+        float normalized_height = clamp((height - 0.0) / (u_contour_max_height - 0.0), 0.0, 1.0);
+        float contour_lines = createContours(normalized_height);
 
-        vec2 texelSize = 1.0 / vec2(256.0, 256.0);
-        float heightRight = createContours(clamp(convertToHeight(texture(u_height_map_center, uv + vec2(texelSize.x, 0.0))) / u_contour_max_height, 0.0, 1.0));
-        float heightUp = createContours(clamp(convertToHeight(texture(u_height_map_center, uv + vec2(0.0, texelSize.y))) / u_contour_max_height, 0.0, 1.0));
+        vec2 texel_size = 1.0 / vec2(256.0, 256.0);
+        float height_right = createContours(clamp(convertToHeight(texture(u_height_map_center, uv + vec2(texel_size.x, 0.0))) / u_contour_max_height, 0.0, 1.0));
+        float height_up = createContours(clamp(convertToHeight(texture(u_height_map_center, uv + vec2(0.0, texel_size.y))) / u_contour_max_height, 0.0, 1.0));
 
         // 境界を計算
-        float edgeThreshold = 0.01; // 境界を検出するためのしきい値
-        float edge = step(edgeThreshold, abs(contourLines - heightRight)) + step(edgeThreshold, abs(contourLines - heightUp));
+        float edge_threshold = 0.01; // 境界を検出するためのしきい値
+        float edge = step(edge_threshold, abs(contour_lines - height_right)) + step(edge_threshold, abs(contour_lines - height_up));
 
         // 最終的な色の計算
-        vec3 col = finalColor.rgb;
-        vec3 outlineColor = u_contour_color.rgb; // アウトラインの色（黒）
+        vec3 col = final_color.rgb;
+        vec3 outline_color = u_contour_color.rgb; // アウトラインの色（黒）
 
          // アウトラインを追加し、ライン以外は透明にする
         if (edge > 0.0) {
-            vec4 finalContourColor = vec4(outlineColor, u_contour_alpha);
-            finalColor.a = max(finalColor.a, finalContourColor.a);
-            finalColor.rgb = mix(finalColor.rgb, finalContourColor.rgb, finalContourColor.a);
+            vec4 final_contour_color = vec4(outline_color, u_contour_alpha);
+            final_color.a = max(final_color.a, final_contour_color.a);
+            final_color.rgb = mix(final_color.rgb, final_contour_color.rgb, final_contour_color.a);
         }
 
     }
@@ -453,19 +453,19 @@ void main() {
 
    if (u_flooding_mode) {
     float height = convertToHeight(color);
-    vec4 floodingColor = vec4(0.0, 0.0, 1.0, u_flooding_alpha); // デフォルトの浸水色
+    vec4 flooding_color = vec4(0.0, 0.0, 1.0, u_flooding_alpha); // デフォルトの浸水色
 
         if (height < u_water_level) {
             // 浸水箇所のテクスチャから色を取得し、floodingAlpha を適用
-            floodingColor = vec4(texture(u_floodingImage, uv).rgb, u_flooding_alpha);
+            flooding_color = vec4(texture(u_floodingImage, uv).rgb, u_flooding_alpha);
 
             // アルファブレンドによる最終的な色の適用
-            finalColor.rgb = mix(finalColor.rgb, floodingColor.rgb, floodingColor.a);
-            finalColor.a = mix(finalColor.a, floodingColor.a, u_flooding_alpha); // アルファもブレンド
+            final_color.rgb = mix(final_color.rgb, flooding_color.rgb, flooding_color.a);
+            final_color.a = mix(final_color.a, flooding_color.a, u_flooding_alpha); // アルファもブレンド
         }
     }
 
 
-    fragColor = finalColor;
+    fragColor = final_color;
 
 }

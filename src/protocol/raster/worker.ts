@@ -166,7 +166,7 @@ self.onmessage = async (e) => {
             u_ambient: { type: '1f', value: shadow.option.ambient.value },
             u_ridge_threshold: { type: '1f', value: curvature.option.ridgeThreshold.value },
             u_valley_threshold: { type: '1f', value: curvature.option.valleyThreshold.value },
-            u_edge_Intensity: { type: '1f', value: edge.option.edgeIntensity.value },
+            u_edge_intensity: { type: '1f', value: edge.option.edgeIntensity.value },
             u_max_height: { type: '1f', value: evolution.option.maxHeight.value },
             u_min_height: { type: '1f', value: evolution.option.minHeight.value },
             u_contour_max_height: { type: '1f', value: contour.option.maxHeight.value },
