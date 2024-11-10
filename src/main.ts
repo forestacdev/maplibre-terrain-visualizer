@@ -3,12 +3,11 @@ import maplibregl from 'maplibre-gl';
 import type { RasterTileSource } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { GUI } from 'lil-gui';
-import { demEntry, demLayers, isBBoxOverlapping, isColorMapParameter, isTextureParameter } from './utils';
+import { uniformsData, isColorMapParameter } from './utils';
 import { webglProtocol } from './protocol/raster';
 import chroma from 'chroma-js';
 import colormap from 'colormap';
 import debounce from 'lodash.debounce';
-import { backgroundSources, tileOptions } from './utils';
 
 const protocol = webglProtocol('webgl');
 maplibregl.addProtocol('webgl', protocol.request);
@@ -20,20 +19,20 @@ const map = new maplibregl.Map({
         version: 8,
         glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
         sources: {
-            custom: {
+            webgl: {
                 type: 'raster',
                 tiles: [`webgl://https://rinya-tochigi.geospatial.jp/2023/rinya/tile/terrainRGB/{z}/{x}/{y}.png?x={x}&y={y}&z={z}`],
                 tileSize: 256,
-                minzoom: demEntry.sourceMinZoom,
-                maxzoom: demEntry.sourceMaxZoom,
-                attribution: demEntry.attribution,
-                bounds: demEntry.bbox,
+                minzoom: 2,
+                maxzoom: 18,
+                attribution: '栃木県',
+                bounds: [139.326731, 36.199924, 140.291983, 37.155039],
             },
         },
         layers: [
             {
-                id: 'custom_layer',
-                source: 'custom',
+                id: 'webgl_layer',
+                source: 'webgl',
                 type: 'raster',
                 maxzoom: 24,
             },
@@ -69,7 +68,7 @@ map.addControl(
 
 const reloadTiles = debounce(() => {
     // protocol.cancelAllRequests();
-    const _source = map.getSource('custom') as RasterTileSource;
+    const _source = map.getSource('webgl') as RasterTileSource;
     _source.setTiles([`webgl://https://rinya-tochigi.geospatial.jp/2023/rinya/tile/terrainRGB/{z}/{x}/{y}.png?x={x}&y={y}&z={z}`]);
 }, 100);
 
@@ -83,23 +82,6 @@ const gui = new GUI({
 if (window.innerWidth < 768) {
     gui.close();
 }
-
-gui.add(
-    demEntry,
-    'name',
-    demLayers.map((layer) => layer.name),
-)
-    .name('地形データ')
-    .onChange((value: string) => {
-        const layer = demLayers.find((layer) => layer.name === value);
-        if (layer) {
-            demEntry.url = layer.tiles[0];
-            demEntry.demType = layer.demType;
-            demEntry.sourceMinZoom = layer.minzoom;
-            demEntry.sourceMaxZoom = layer.maxzoom;
-            demEntry.bbox = layer.bbox;
-        }
-    });
 
 const createColors = (colorMap: string, reverse: boolean = false): string => {
     const options = {
@@ -129,60 +111,8 @@ const enableAllControllers = (controllers: Array<any>, activeController: any, va
     });
 };
 
-// 背景地図の切り替え
-gui.add(
-    {
-        background: 'mierune_mono',
-    },
-    'background',
-    Object.keys(backgroundSources).map((name) => name),
-)
-    .name('背景地図')
-    .onChange((value: string) => {
-        const sourceData = backgroundSources[value];
-
-        map.removeLayer('background_layer');
-        map.removeSource('background');
-
-        map.addSource('background', {
-            ...sourceData,
-        });
-        map.addLayer(
-            {
-                id: 'background_layer',
-                source: 'background',
-                type: 'raster',
-            },
-            'custom_layer',
-        );
-    });
-
-gui.add(tileOptions.normalMapQuality, 'value', tileOptions.normalMapQuality.selection).name(tileOptions.normalMapQuality.name).onChange(reloadTiles);
-
-const terrainParams = {
-    exaggeration: 1,
-};
-
-// 3D表示のコントロール
-gui.add({ value: false }, 'value')
-    .name('3D表示')
-    .onChange((value: boolean) => {
-        if (value) {
-            map.setTerrain({
-                source: 'terrain',
-                exaggeration: terrainParams.exaggeration,
-            });
-            if (map.getPitch() === 0) {
-                map.easeTo({ pitch: 60 });
-            }
-        } else {
-            map.setTerrain(null);
-            map.easeTo({ pitch: 0 });
-        }
-    });
-
 // 各プロパティに対応するフォルダを作成
-Object.entries(demEntry.uniformsData).forEach(([_key, data]) => {
+Object.entries(uniformsData).forEach(([_key, data]) => {
     let _folder: any;
     _folder = gui.addFolder(data.name);
 
@@ -240,13 +170,6 @@ Object.entries(demEntry.uniformsData).forEach(([_key, data]) => {
                     if (!data.showMenu) {
                         reverseController.hide();
                     }
-                } else if (isTextureParameter(paramData)) {
-                    controller = _folder
-                        .add(paramData, 'value', paramData.selection)
-                        .name(paramData.name)
-                        .onChange(() => {
-                            reloadTiles();
-                        });
                 } else {
                     controller = _folder.addColor(paramData, 'value').name(paramData.name).onChange(reloadTiles);
                 }

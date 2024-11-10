@@ -1,6 +1,4 @@
 import colormap from 'colormap';
-import type { textureDataKey } from '../utils';
-import { textureData } from '../utils';
 
 type TileImageData = { [position: string]: { tileId: string; image: ImageBitmap } };
 // タイル画像
@@ -153,42 +151,6 @@ export class ColorMapManager {
     }
 
     get(cacheKey: string): Uint8Array | undefined {
-        return this.cache.get(cacheKey);
-    }
-
-    has(cacheKey: string): boolean {
-        return this.cache.has(cacheKey);
-    }
-}
-
-// テクスチャ
-export class TextureManager {
-    private cache: Map<string, ImageBitmap>;
-
-    public constructor() {
-        this.cache = new Map();
-    }
-
-    public async loadImage(key: textureDataKey): Promise<ImageBitmap> {
-        const path = textureData[key];
-
-        if (this.has(key)) {
-            return this.get(key) as ImageBitmap;
-        }
-
-        const imageData = await fetch(path)
-            .then((response) => response.blob())
-            .then((blob) => createImageBitmap(blob));
-        this.cache.set(key, imageData);
-
-        return imageData;
-    }
-
-    add(cacheKey: string, image: ImageBitmap): void {
-        this.cache.set(cacheKey, image);
-    }
-
-    get(cacheKey: string): ImageBitmap | undefined {
         return this.cache.get(cacheKey);
     }
 

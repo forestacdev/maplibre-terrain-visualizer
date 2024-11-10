@@ -1,7 +1,5 @@
-import { DEM_DATA_TYPE, demEntry, tileOptions } from '../../utils';
-import type { DemDataTypeKey } from '../../utils';
-import { TileImageManager, ColorMapManager, TextureManager } from '../image';
-import { HAS_DEBUG_TILE, debugTileImage } from '../debug';
+import { uniformsData } from '../../utils';
+import { TileImageManager, ColorMapManager } from '../image';
 
 class WorkerProtocol {
     private worker: Worker;
@@ -30,7 +28,7 @@ class WorkerProtocol {
         const x = parseInt(url.searchParams.get('x') || '0', 10);
         const y = parseInt(url.searchParams.get('y') || '0', 10);
         const z = parseInt(url.searchParams.get('z') || '0', 10);
-        const baseUrl = demEntry.url;
+        const baseUrl = 'https://rinya-tochigi.geospatial.jp/2023/rinya/tile/terrainRGB/{z}/{x}/{y}.png';
 
         // 画像の取得
         const images = await this.tileCache.getAdjacentTilesWithImages(x, y, z, baseUrl, controller);
@@ -44,7 +42,7 @@ class WorkerProtocol {
             const bottom = images.bottom; // 下のタイル
             this.pendingRequests.set(tileId, { resolve, reject, controller });
 
-            const evolutionColorArray = this.colorMapCache.createColorArray(demEntry.uniformsData.evolution.option.colorMap.value, demEntry.uniformsData.evolution.option.colorMap.reverse);
+            const evolutionColorArray = this.colorMapCache.createColorArray(uniformsData.evolution.option.colorMap.value, uniformsData.evolution.option.colorMap.reverse);
 
             this.worker.postMessage({
                 tileId,
@@ -54,7 +52,7 @@ class WorkerProtocol {
                 top: top.image,
                 bottom: bottom.image,
                 z,
-                uniformsData: demEntry.uniformsData,
+                uniformsData: uniformsData,
                 evolutionColorArray,
             });
         });
@@ -72,10 +70,6 @@ class WorkerProtocol {
         } else if (request) {
             request.resolve({ data: buffer });
             this.pendingRequests.delete(id);
-        }
-
-        if (import.meta.env.MODE === 'development' && HAS_DEBUG_TILE) {
-            debugTileImage(id, buffer);
         }
     };
 
