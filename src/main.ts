@@ -3,60 +3,7 @@ import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 import { GUI } from 'lil-gui';
-import chroma from 'chroma-js';
 import colormap from 'colormap';
-
-import type { RasterTileSource } from 'maplibre-gl';
-import debounce from 'lodash.debounce';
-
-const COLOR_MAP_TYPE = [
-    'jet',
-    'hsv',
-    'hot',
-    'spring',
-    'summer',
-    'autumn',
-    'winter',
-    'bone',
-    'copper',
-    'greys',
-    'yignbu',
-    'greens',
-    'yiorrd',
-    'bluered',
-    'rdbu',
-    'picnic',
-    'rainbow',
-    'portland',
-    'blackbody',
-    'earth',
-    'electric',
-    'viridis',
-    'inferno',
-    'magma',
-    'plasma',
-    'warm',
-    'cool',
-    'rainbow-soft',
-    'bathymetry',
-    'cdom',
-    'chlorophyll',
-    'density',
-    'freesurface-blue',
-    'freesurface-red',
-    'oxygen',
-    'par',
-    'phase',
-    'salinity',
-    'temperature',
-    'turbidity',
-    'velocity-blue',
-    'velocity-green',
-    'cubehelix',
-] as const;
-
-export type ColorMapType = (typeof COLOR_MAP_TYPE)[number];
-const mutableColorMapType: ColorMapType[] = [...COLOR_MAP_TYPE];
 
 type NumberParameter = {
     name: string;
@@ -71,18 +18,11 @@ type ColorParameter = {
     value: string;
 };
 
-export type colorMapParameter = {
-    name: string;
-    value: ColorMapType;
-    selection: ColorMapType[];
-};
-
 export type UniformsData = {
     evolution: {
         opacity: NumberParameter;
         maxHeight: NumberParameter;
         minHeight: NumberParameter;
-        colorMap: colorMapParameter;
     };
     shadow: {
         opacity: NumberParameter;
@@ -101,95 +41,61 @@ export type UniformsData = {
 
 export const uniformsData: UniformsData = {
     evolution: {
+        // 不透明度
         opacity: {
-            name: '透過度',
             value: 1.0,
-            min: 0,
-            max: 1,
-            step: 0.01,
         },
+        // 最大標高
         maxHeight: {
-            name: '最大標高',
             value: 2500,
-            min: -10000,
-            max: 10000,
-            step: 0.1,
         },
+        // 最小標高
         minHeight: {
-            name: '最小標高',
             value: 500,
-            min: -10000,
-            max: 10000,
-            step: 0.1,
-        },
-        colorMap: {
-            name: 'カラーマップ',
-            value: 'phase',
-            selection: mutableColorMapType,
         },
     },
     shadow: {
+        // 不透明度
         opacity: {
-            name: '透過度',
             value: 0.8,
-            min: 0,
-            max: 1,
-            step: 0.01,
         },
+        // 陰影色
         shadowColor: {
-            name: '陰影色',
             value: '#000000',
         },
+        // ハイライト色
         highlightColor: {
-            name: 'ハイライト色',
             value: '#00ff9d',
         },
+        // 環境光
         ambient: {
-            name: '環境光',
             value: 0.3,
-            min: 0,
-            max: 1,
-            step: 0.01,
         },
+
+        // 方位
         azimuth: {
-            name: '方位',
             value: 0,
-            min: 0,
-            max: 360,
-            step: 1,
         },
+
+        // 太陽高度
         altitude: {
-            name: '高度',
             value: 30,
-            min: 0,
-            max: 90,
-            step: 1,
         },
     },
     edge: {
+        // 不透明度
         opacity: {
-            name: '透過度',
             value: 0.9,
-            min: 0,
-            max: 1,
-            step: 0.01,
         },
+        // エッジ強度
         edgeIntensity: {
-            name: 'エッジ強度',
             value: 0.4,
-            min: 0,
-            max: 2,
-            step: 0.01,
         },
+        // エッジカラー
         edgeColor: {
-            name: 'エッジ色',
             value: '#ffffff',
         },
     },
-};
-
-export const isColorMapParameter = (param: any): param is colorMapParameter => {
-    return typeof param === 'object' && typeof param.name === 'string' && typeof param.value === 'string' && typeof param.reverse === 'boolean' && Array.isArray(param.selection);
 };
 
 type TileImageData = { [position: string]: { tileId: string; image: ImageBitmap } };
