@@ -52,7 +52,8 @@ export const uniformsData: UniformsData = {
 };
 
 type TileImageData = { [position: string]: { tileId: string; image: ImageBitmap } };
-// タイル画像
+
+// タイル画像の処理
 export class TileImageManager {
     private static instance: TileImageManager;
     private cache: Map<string, ImageBitmap>;
@@ -219,15 +220,16 @@ class WorkerProtocol {
 
     constructor(worker: Worker) {
         this.worker = worker;
-        this.pendingRequests = new Map();
-        this.tileCache = TileImageManager.getInstance(); // シングルトンインスタンスの取得
-        this.colorMapCache = new ColorMapManager();
+        this.pendingRequests = new Map(); // リクエストの管理
+        this.tileCache = TileImageManager.getInstance(); // タイル画像のキャッシュ　シングルトンインスタンスの取得
+        this.colorMapCache = new ColorMapManager(); // カラーマップのキャッシュ
         this.worker.addEventListener('message', this.handleMessage);
         this.worker.addEventListener('error', this.handleError);
     }
 
+    // タイル画像の読み込みとワーカーへ送信
     async request(url: URL, controller: AbortController): Promise<{ data: Uint8Array }> {
-        // タイル座標からIDとURLを生成
+        // タイル座標の取得
         const x = parseInt(url.searchParams.get('x') || '0', 10);
         const y = parseInt(url.searchParams.get('y') || '0', 10);
         const z = parseInt(url.searchParams.get('z') || '0', 10);
@@ -247,6 +249,7 @@ class WorkerProtocol {
 
             const evolutionColorArray = this.colorMapCache.createColorArray('cool');
 
+            // ワーカーに送信
             this.worker.postMessage({
                 tileId,
                 center: center.image,
@@ -261,6 +264,7 @@ class WorkerProtocol {
         });
     }
 
+    // ワーカーから受けとたタイル画像を地図側に反映する
     private handleMessage = (e: MessageEvent) => {
         const { id, buffer, error } = e.data;
         const request = this.pendingRequests.get(id);
@@ -276,6 +280,7 @@ class WorkerProtocol {
         }
     };
 
+    // エラー処理
     private handleError(e: ErrorEvent) {
         console.error('Worker error:', e);
         this.pendingRequests.forEach((request) => {
@@ -334,7 +339,7 @@ const map = new maplibregl.Map({
             // addProtocolでカスタム処理を加えるsource
             webgl: {
                 type: 'raster',
-                tiles: [`webgl://https://rinya-tochigi.geospatial.jp/2023/rinya/tile/terrainRGB/{z}/{x}/{y}.png?x={x}&y={y}&z={z}`], // タイル座標の部分をURLパラメーターに持たせる
+                tiles: [`https://rinya-tochigi.geospatial.jp/2023/rinya/tile/terrainRGB/{z}/{x}/{y}.png?x={x}&y={y}&z={z}`], // タイル座標の部分をURLパラメーターに持たせる
                 tileSize: 256,
                 minzoom: 2,
                 maxzoom: 18,

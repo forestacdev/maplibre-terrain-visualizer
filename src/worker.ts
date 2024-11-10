@@ -1,7 +1,7 @@
 import fsSource from './shader/fragment.glsl?raw';
 import vsSource from './shader/vertex.glsl?raw';
 import chroma from 'chroma-js';
-import { UniformsData } from './main';
+import type { UniformsData } from './main';
 
 let gl: WebGL2RenderingContext | null = null;
 let program: WebGLProgram | null = null;
