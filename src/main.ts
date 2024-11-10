@@ -58,11 +58,6 @@ const COLOR_MAP_TYPE = [
 export type ColorMapType = (typeof COLOR_MAP_TYPE)[number];
 const mutableColorMapType: ColorMapType[] = [...COLOR_MAP_TYPE];
 
-type BooleanParameter = {
-    name: string;
-    value: boolean;
-};
-
 type NumberParameter = {
     name: string;
     value: number;
@@ -79,7 +74,6 @@ type ColorParameter = {
 export type colorMapParameter = {
     name: string;
     value: ColorMapType;
-    reverse: boolean;
     selection: ColorMapType[];
 };
 
@@ -88,7 +82,6 @@ export type UniformsData = {
         name: string;
         showMenu: boolean;
         option: {
-            visible: BooleanParameter;
             opacity: NumberParameter;
             maxHeight: NumberParameter;
             minHeight: NumberParameter;
@@ -99,7 +92,6 @@ export type UniformsData = {
         name: string;
         showMenu: boolean;
         option: {
-            visible: BooleanParameter;
             opacity: NumberParameter;
             shadowColor: ColorParameter;
             highlightColor: ColorParameter;
@@ -112,7 +104,6 @@ export type UniformsData = {
         name: string;
         showMenu: boolean;
         option: {
-            visible: BooleanParameter;
             opacity: NumberParameter;
             edgeIntensity: NumberParameter;
             edgeColor: ColorParameter;
@@ -125,35 +116,30 @@ export const uniformsData: UniformsData = {
         name: '標高',
         showMenu: true,
         option: {
-            visible: {
-                name: '表示',
-                value: true,
-            },
             opacity: {
                 name: '透過度',
-                value: 0.8,
+                value: 1.0,
                 min: 0,
                 max: 1,
                 step: 0.01,
             },
             maxHeight: {
                 name: '最大標高',
-                value: 4000,
+                value: 2500,
                 min: -10000,
                 max: 10000,
                 step: 0.1,
             },
             minHeight: {
                 name: '最小標高',
-                value: 0,
+                value: 500,
                 min: -10000,
                 max: 10000,
                 step: 0.1,
             },
             colorMap: {
                 name: 'カラーマップ',
-                value: 'cool',
-                reverse: false,
+                value: 'phase',
                 selection: mutableColorMapType,
             },
         },
@@ -162,13 +148,9 @@ export const uniformsData: UniformsData = {
         name: '陰影',
         showMenu: true,
         option: {
-            visible: {
-                name: '表示',
-                value: true,
-            },
             opacity: {
                 name: '透過度',
-                value: 0.7,
+                value: 0.8,
                 min: 0,
                 max: 1,
                 step: 0.01,
@@ -179,7 +161,7 @@ export const uniformsData: UniformsData = {
             },
             highlightColor: {
                 name: 'ハイライト色',
-                value: '#ff3300',
+                value: '#00ff9d',
             },
             ambient: {
                 name: '環境光',
@@ -208,13 +190,9 @@ export const uniformsData: UniformsData = {
         name: 'エッジ',
         showMenu: true,
         option: {
-            visible: {
-                name: '表示',
-                value: true,
-            },
             opacity: {
                 name: '透過度',
-                value: 0.8,
+                value: 0.9,
                 min: 0,
                 max: 1,
                 step: 0.01,
@@ -228,7 +206,7 @@ export const uniformsData: UniformsData = {
             },
             edgeColor: {
                 name: 'エッジ色',
-                value: '#00fbff',
+                value: '#ffffff',
             },
         },
     },
@@ -343,9 +321,8 @@ export class ColorMapManager {
     public constructor() {
         this.cache = new Map();
     }
-    public createColorArray(colorMapName: string, reverse: boolean = false): Uint8Array {
-        // reverse フラグを含めてキャッシュキーを作成
-        const cacheKey = `${colorMapName}_${reverse ? 'reversed' : 'normal'}`;
+    public createColorArray(colorMapName: string): Uint8Array {
+        const cacheKey = `${colorMapName}`;
 
         if (this.has(cacheKey)) {
             return this.get(cacheKey) as Uint8Array;
@@ -363,11 +340,6 @@ export class ColorMapManager {
         };
 
         let colors = colormap(options as any);
-
-        // reverse が true の場合、色の配列を反転
-        if (reverse) {
-            colors = colors.reverse();
-        }
 
         // RGBデータの格納
         let ptr = 0;
@@ -438,7 +410,7 @@ class WorkerProtocol {
             const bottom = images.bottom; // 下のタイル
             this.pendingRequests.set(tileId, { resolve, reject, controller });
 
-            const evolutionColorArray = this.colorMapCache.createColorArray(uniformsData.evolution.option.colorMap.value, uniformsData.evolution.option.colorMap.reverse);
+            const evolutionColorArray = this.colorMapCache.createColorArray(uniformsData.evolution.option.colorMap.value);
 
             this.worker.postMessage({
                 tileId,
@@ -580,13 +552,11 @@ const map = new maplibregl.Map({
             },
         ],
     },
-    center: [139.53764, 36.76931],
-    zoom: 14,
-    maxPitch: 85,
-    hash: true,
+    center: [139.50785, 36.7751],
+    zoom: 13.5,
+    // hash: true,
     renderWorldCopies: false,
 });
-
 // コントロール系
 
 const reloadTiles = debounce(() => {
@@ -606,7 +576,7 @@ if (window.innerWidth < 768) {
     gui.close();
 }
 
-const createColors = (colorMap: string, reverse: boolean = false): string => {
+const createColors = (colorMap: string): string => {
     const options = {
         colormap: colorMap, // colormap でサポートされているカラースケール名
         nshades: 100, // 色の段階数
@@ -615,9 +585,6 @@ const createColors = (colorMap: string, reverse: boolean = false): string => {
     };
 
     const colorArray = colormap(options as any);
-    if (reverse) {
-        colorArray.reverse();
-    }
 
     const scale = chroma.scale(colorArray as any).colors(100);
 
@@ -667,7 +634,7 @@ Object.entries(uniformsData).forEach(([_key, data]) => {
                         .add(paramData, 'value', paramData.selection)
                         .name(paramData.name)
                         .onChange((value: string) => {
-                            div.style.background = `linear-gradient(to right, ${createColors(value, paramData.reverse)})`;
+                            div.style.background = `linear-gradient(to right, ${createColors(value)})`;
                             reloadTiles();
                         });
                     const children = _folder.$children.querySelector('.option');
@@ -675,7 +642,7 @@ Object.entries(uniformsData).forEach(([_key, data]) => {
                         // 小要素の追加
                         div.style.height = '20px';
                         div.style.width = '300px';
-                        div.style.background = `linear-gradient(to right, ${createColors(paramData.value, paramData.reverse)})`;
+                        div.style.background = `linear-gradient(to right, ${createColors(paramData.value)})`;
                         // 選択肢の追加
                         children.appendChild(div);
                     }
@@ -685,7 +652,7 @@ Object.entries(uniformsData).forEach(([_key, data]) => {
                         .add(paramData, 'reverse')
                         .name('カラーランプの反転')
                         .onChange(() => {
-                            div.style.background = `linear-gradient(to right, ${createColors(paramData.value, paramData.reverse)})`;
+                            div.style.background = `linear-gradient(to right, ${createColors(paramData.value)})`;
                             reloadTiles();
                         });
 

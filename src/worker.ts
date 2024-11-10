@@ -1,6 +1,7 @@
 import fsSource from './shader/fragment.glsl?raw';
 import vsSource from './shader/vertex.glsl?raw';
 import chroma from 'chroma-js';
+import { UniformsData } from './main';
 
 let gl: WebGL2RenderingContext | null = null;
 let program: WebGLProgram | null = null;
@@ -131,7 +132,7 @@ self.onmessage = async (e) => {
             throw new Error('WebGL initialization failed');
         }
 
-        const { evolution, shadow, edge } = uniformsData as DemEntry['uniformsData'];
+        const { evolution, shadow, edge } = uniformsData as UniformsData;
 
         const lightDirection = calculateLightDirection(shadow.option.azimuth.value, shadow.option.altitude.value);
 

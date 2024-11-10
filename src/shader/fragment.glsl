@@ -193,6 +193,7 @@ void main() {
     // 陰影効果
     vec3 view_direction = normalize(vec3(0.0, 0.0, 1.0)); // 視線ベクトル
     float highlight_strength = 0.5; // ハイライトの強度
+
     // 拡散光の計算
     float diffuse = max(dot(normal, u_light_direction), 0.0);
 
@@ -212,7 +213,6 @@ void main() {
 
 
     // エッジ効果
-    vec2 e = vec2(1.5/256.0, 0);
     float edge_x = abs(terrain_data.h_mat[1][2] - terrain_data.h_mat[1][0]); // 左右の高さ差
     float edge_y = abs(terrain_data.h_mat[2][1] - terrain_data.h_mat[0][1]); // 上下の高さ差
     
