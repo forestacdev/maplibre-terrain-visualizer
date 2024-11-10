@@ -15,14 +15,12 @@ class WorkerProtocol {
     >;
     private tileCache: TileImageManager;
     private colorMapCache: ColorMapManager;
-    private textureCache: TextureManager;
 
     constructor(worker: Worker) {
         this.worker = worker;
         this.pendingRequests = new Map();
         this.tileCache = TileImageManager.getInstance(); // シングルトンインスタンスの取得
         this.colorMapCache = new ColorMapManager();
-        this.textureCache = new TextureManager();
         this.worker.addEventListener('message', this.handleMessage);
         this.worker.addEventListener('error', this.handleError);
     }
@@ -32,15 +30,10 @@ class WorkerProtocol {
         const x = parseInt(url.searchParams.get('x') || '0', 10);
         const y = parseInt(url.searchParams.get('y') || '0', 10);
         const z = parseInt(url.searchParams.get('z') || '0', 10);
-        const demType = demEntry.demType as DemDataTypeKey;
-        const maxzoom = demEntry.sourceMaxZoom;
         const baseUrl = demEntry.url;
 
-        const onlyCenter = tileOptions.normalMapQuality.value === '中心タイルのみ';
-
         // 画像の取得
-        const images = await this.tileCache.getAdjacentTilesWithImages(x, y, z, baseUrl, controller, onlyCenter);
-        const floodingImage = await this.textureCache.loadImage(demEntry.uniformsData.flooding.option.texture.value);
+        const images = await this.tileCache.getAdjacentTilesWithImages(x, y, z, baseUrl, controller);
 
         return new Promise((resolve, reject) => {
             const center = images.center; // 中央のタイル
@@ -51,11 +44,7 @@ class WorkerProtocol {
             const bottom = images.bottom; // 下のタイル
             this.pendingRequests.set(tileId, { resolve, reject, controller });
 
-            const demTypeNumber = DEM_DATA_TYPE[demType as DemDataTypeKey];
-
             const evolutionColorArray = this.colorMapCache.createColorArray(demEntry.uniformsData.evolution.option.colorMap.value, demEntry.uniformsData.evolution.option.colorMap.reverse);
-            const slopeCorlorArray = this.colorMapCache.createColorArray(demEntry.uniformsData.slope.option.colorMap.value, demEntry.uniformsData.slope.option.colorMap.reverse);
-            const aspectColorArray = this.colorMapCache.createColorArray(demEntry.uniformsData.aspect.option.colorMap.value, demEntry.uniformsData.aspect.option.colorMap.reverse);
 
             this.worker.postMessage({
                 tileId,
@@ -65,14 +54,8 @@ class WorkerProtocol {
                 top: top.image,
                 bottom: bottom.image,
                 z,
-                maxzoom,
-                demTypeNumber,
                 uniformsData: demEntry.uniformsData,
                 evolutionColorArray,
-                slopeCorlorArray,
-                aspectColorArray,
-                floodingImage,
-                onlyCenter,
             });
         });
     }
