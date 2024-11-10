@@ -1,13 +1,555 @@
 import './style.css'; // CSSファイルのimport
 import maplibregl from 'maplibre-gl';
-import type { RasterTileSource } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+
 import { GUI } from 'lil-gui';
-import { uniformsData, isColorMapParameter } from './utils';
-import { webglProtocol } from './protocol/raster';
 import chroma from 'chroma-js';
 import colormap from 'colormap';
+
+import type { RasterTileSource } from 'maplibre-gl';
 import debounce from 'lodash.debounce';
+
+const COLOR_MAP_TYPE = [
+    'jet',
+    'hsv',
+    'hot',
+    'spring',
+    'summer',
+    'autumn',
+    'winter',
+    'bone',
+    'copper',
+    'greys',
+    'yignbu',
+    'greens',
+    'yiorrd',
+    'bluered',
+    'rdbu',
+    'picnic',
+    'rainbow',
+    'portland',
+    'blackbody',
+    'earth',
+    'electric',
+    'viridis',
+    'inferno',
+    'magma',
+    'plasma',
+    'warm',
+    'cool',
+    'rainbow-soft',
+    'bathymetry',
+    'cdom',
+    'chlorophyll',
+    'density',
+    'freesurface-blue',
+    'freesurface-red',
+    'oxygen',
+    'par',
+    'phase',
+    'salinity',
+    'temperature',
+    'turbidity',
+    'velocity-blue',
+    'velocity-green',
+    'cubehelix',
+] as const;
+
+export type ColorMapType = (typeof COLOR_MAP_TYPE)[number];
+const mutableColorMapType: ColorMapType[] = [...COLOR_MAP_TYPE];
+
+type BooleanParameter = {
+    name: string;
+    value: boolean;
+};
+
+type NumberParameter = {
+    name: string;
+    value: number;
+    min: number;
+    max: number;
+    step: number;
+};
+
+type ColorParameter = {
+    name: string;
+    value: string;
+};
+
+export type colorMapParameter = {
+    name: string;
+    value: ColorMapType;
+    reverse: boolean;
+    selection: ColorMapType[];
+};
+
+export type UniformsData = {
+    evolution: {
+        name: string;
+        showMenu: boolean;
+        option: {
+            visible: BooleanParameter;
+            opacity: NumberParameter;
+            maxHeight: NumberParameter;
+            minHeight: NumberParameter;
+            colorMap: colorMapParameter;
+        };
+    };
+    shadow: {
+        name: string;
+        showMenu: boolean;
+        option: {
+            visible: BooleanParameter;
+            opacity: NumberParameter;
+            shadowColor: ColorParameter;
+            highlightColor: ColorParameter;
+            ambient: NumberParameter;
+            azimuth: NumberParameter;
+            altitude: NumberParameter;
+        };
+    };
+    edge: {
+        name: string;
+        showMenu: boolean;
+        option: {
+            visible: BooleanParameter;
+            opacity: NumberParameter;
+            edgeIntensity: NumberParameter;
+            edgeColor: ColorParameter;
+        };
+    };
+};
+
+export const uniformsData: UniformsData = {
+    evolution: {
+        name: '標高',
+        showMenu: true,
+        option: {
+            visible: {
+                name: '表示',
+                value: true,
+            },
+            opacity: {
+                name: '透過度',
+                value: 0.8,
+                min: 0,
+                max: 1,
+                step: 0.01,
+            },
+            maxHeight: {
+                name: '最大標高',
+                value: 4000,
+                min: -10000,
+                max: 10000,
+                step: 0.1,
+            },
+            minHeight: {
+                name: '最小標高',
+                value: 0,
+                min: -10000,
+                max: 10000,
+                step: 0.1,
+            },
+            colorMap: {
+                name: 'カラーマップ',
+                value: 'cool',
+                reverse: false,
+                selection: mutableColorMapType,
+            },
+        },
+    },
+    shadow: {
+        name: '陰影',
+        showMenu: true,
+        option: {
+            visible: {
+                name: '表示',
+                value: true,
+            },
+            opacity: {
+                name: '透過度',
+                value: 0.7,
+                min: 0,
+                max: 1,
+                step: 0.01,
+            },
+            shadowColor: {
+                name: '陰影色',
+                value: '#000000',
+            },
+            highlightColor: {
+                name: 'ハイライト色',
+                value: '#ff3300',
+            },
+            ambient: {
+                name: '環境光',
+                value: 0.3,
+                min: 0,
+                max: 1,
+                step: 0.01,
+            },
+            azimuth: {
+                name: '方位',
+                value: 0,
+                min: 0,
+                max: 360,
+                step: 1,
+            },
+            altitude: {
+                name: '高度',
+                value: 30,
+                min: 0,
+                max: 90,
+                step: 1,
+            },
+        },
+    },
+    edge: {
+        name: 'エッジ',
+        showMenu: true,
+        option: {
+            visible: {
+                name: '表示',
+                value: true,
+            },
+            opacity: {
+                name: '透過度',
+                value: 0.8,
+                min: 0,
+                max: 1,
+                step: 0.01,
+            },
+            edgeIntensity: {
+                name: 'エッジ強度',
+                value: 0.4,
+                min: 0,
+                max: 2,
+                step: 0.01,
+            },
+            edgeColor: {
+                name: 'エッジ色',
+                value: '#00fbff',
+            },
+        },
+    },
+};
+
+export const isColorMapParameter = (param: any): param is colorMapParameter => {
+    return typeof param === 'object' && typeof param.name === 'string' && typeof param.value === 'string' && typeof param.reverse === 'boolean' && Array.isArray(param.selection);
+};
+
+type TileImageData = { [position: string]: { tileId: string; image: ImageBitmap } };
+// タイル画像
+export class TileImageManager {
+    private static instance: TileImageManager;
+    private cache: Map<string, ImageBitmap>;
+    private cacheSizeLimit: number;
+    private cacheOrder: string[];
+
+    private constructor(cacheSizeLimit = 500) {
+        this.cache = new Map();
+        this.cacheSizeLimit = cacheSizeLimit;
+        this.cacheOrder = [];
+    }
+
+    // TileImageManager のインスタンスを取得する静的メソッド
+    public static getInstance(cacheSizeLimit = 500): TileImageManager {
+        if (!TileImageManager.instance) {
+            TileImageManager.instance = new TileImageManager(cacheSizeLimit);
+        }
+        return TileImageManager.instance;
+    }
+
+    public async loadImage(src: string, signal: AbortSignal): Promise<ImageBitmap> {
+        try {
+            const response = await fetch(src, { signal });
+            if (!response.ok) {
+                throw new Error('Failed to fetch image');
+            }
+            return await createImageBitmap(await response.blob());
+        } catch (error) {
+            if (error instanceof Error && error.name === 'AbortError') {
+                // リクエストがキャンセルされた場合はエラーをスロー
+                throw error;
+            } else {
+                // 他のエラー時には空の画像を返す
+                return await createImageBitmap(new ImageData(1, 1));
+            }
+        }
+    }
+
+    public async getAdjacentTilesWithImages(x: number, y: number, z: number, baseurl: string, controller: AbortController): Promise<TileImageData> {
+        const positions = [
+            { position: 'center', dx: 0, dy: 0 },
+            { position: 'left', dx: -1, dy: 0 },
+            { position: 'right', dx: 1, dy: 0 },
+            { position: 'top', dx: 0, dy: -1 },
+            { position: 'bottom', dx: 0, dy: 1 },
+        ];
+
+        const result: TileImageData = {};
+
+        await Promise.all(
+            positions.map(async ({ position, dx, dy }) => {
+                const tileX = x + dx;
+                const tileY = y + dy;
+                const imageUrl = baseurl.replace('{x}', tileX.toString()).replace('{y}', tileY.toString()).replace('{z}', z.toString());
+
+                const imageData = await this.loadImage(imageUrl, controller.signal);
+
+                result[position] = { tileId: imageUrl, image: imageData };
+            }),
+        );
+
+        return result;
+    }
+
+    add(tileId: string, image: ImageBitmap): void {
+        if (this.cacheOrder.length >= this.cacheSizeLimit) {
+            const oldestTileId = this.cacheOrder.shift();
+            if (oldestTileId) {
+                this.cache.delete(oldestTileId);
+            }
+        }
+        this.cache.set(tileId, image);
+        this.cacheOrder.push(tileId);
+    }
+
+    get(tileId: string): ImageBitmap | undefined {
+        return this.cache.get(tileId);
+    }
+
+    has(tileId: string): boolean {
+        return this.cache.has(tileId);
+    }
+
+    updateOrder(tileId: string): void {
+        const index = this.cacheOrder.indexOf(tileId);
+        if (index > -1) {
+            this.cacheOrder.splice(index, 1);
+            this.cacheOrder.push(tileId);
+        }
+    }
+
+    clear(): void {
+        this.cache.clear();
+        this.cacheOrder = [];
+    }
+}
+
+// カラーマップ
+export class ColorMapManager {
+    private cache: Map<string, Uint8Array>;
+    public constructor() {
+        this.cache = new Map();
+    }
+    public createColorArray(colorMapName: string, reverse: boolean = false): Uint8Array {
+        // reverse フラグを含めてキャッシュキーを作成
+        const cacheKey = `${colorMapName}_${reverse ? 'reversed' : 'normal'}`;
+
+        if (this.has(cacheKey)) {
+            return this.get(cacheKey) as Uint8Array;
+        }
+
+        const width = 256;
+        const pixels = new Uint8Array(width * 3); // RGBのみの3チャンネルデータ
+
+        // オプションオブジェクトを作成
+        const options = {
+            colormap: colorMapName,
+            nshades: width,
+            format: 'rgb', // RGBAからRGBに変更
+            alpha: 1,
+        };
+
+        let colors = colormap(options as any);
+
+        // reverse が true の場合、色の配列を反転
+        if (reverse) {
+            colors = colors.reverse();
+        }
+
+        // RGBデータの格納
+        let ptr = 0;
+        for (let i = 0; i < width; i++) {
+            const color = colors[i] as number[];
+            pixels[ptr++] = color[0];
+            pixels[ptr++] = color[1];
+            pixels[ptr++] = color[2];
+        }
+
+        // キャッシュに格納して再利用可能にする
+        this.cache.set(cacheKey, pixels);
+
+        return pixels;
+    }
+
+    add(cacheKey: string, pixels: Uint8Array): void {
+        this.cache.set(cacheKey, pixels);
+    }
+
+    get(cacheKey: string): Uint8Array | undefined {
+        return this.cache.get(cacheKey);
+    }
+
+    has(cacheKey: string): boolean {
+        return this.cache.has(cacheKey);
+    }
+}
+
+class WorkerProtocol {
+    private worker: Worker;
+    private pendingRequests: Map<
+        string,
+        {
+            resolve: (value: { data: Uint8Array } | PromiseLike<{ data: Uint8Array }>) => void;
+            reject: (reason?: Error) => void;
+            controller: AbortController;
+        }
+    >;
+    private tileCache: TileImageManager;
+    private colorMapCache: ColorMapManager;
+
+    constructor(worker: Worker) {
+        this.worker = worker;
+        this.pendingRequests = new Map();
+        this.tileCache = TileImageManager.getInstance(); // シングルトンインスタンスの取得
+        this.colorMapCache = new ColorMapManager();
+        this.worker.addEventListener('message', this.handleMessage);
+        this.worker.addEventListener('error', this.handleError);
+    }
+
+    async request(url: URL, controller: AbortController): Promise<{ data: Uint8Array }> {
+        // タイル座標からIDとURLを生成
+        const x = parseInt(url.searchParams.get('x') || '0', 10);
+        const y = parseInt(url.searchParams.get('y') || '0', 10);
+        const z = parseInt(url.searchParams.get('z') || '0', 10);
+        const baseUrl = 'https://rinya-tochigi.geospatial.jp/2023/rinya/tile/terrainRGB/{z}/{x}/{y}.png';
+
+        // 画像の取得
+        const images = await this.tileCache.getAdjacentTilesWithImages(x, y, z, baseUrl, controller);
+
+        return new Promise((resolve, reject) => {
+            const center = images.center; // 中央のタイル
+            const tileId = center.tileId; // ワーカー用ID
+            const left = images.left; // 左のタイル
+            const right = images.right; // 右のタイル
+            const top = images.top; // 上のタイル
+            const bottom = images.bottom; // 下のタイル
+            this.pendingRequests.set(tileId, { resolve, reject, controller });
+
+            const evolutionColorArray = this.colorMapCache.createColorArray(uniformsData.evolution.option.colorMap.value, uniformsData.evolution.option.colorMap.reverse);
+
+            this.worker.postMessage({
+                tileId,
+                center: center.image,
+                left: left.image,
+                right: right.image,
+                top: top.image,
+                bottom: bottom.image,
+                z,
+                uniformsData: uniformsData,
+                evolutionColorArray,
+            });
+        });
+    }
+
+    private handleMessage = (e: MessageEvent) => {
+        const { id, buffer, error } = e.data;
+        const request = this.pendingRequests.get(id);
+        if (error) {
+            console.error(`Error processing tile ${id}:`, error);
+            if (request) {
+                request.reject(new Error(error));
+                this.pendingRequests.delete(id);
+            }
+        } else if (request) {
+            request.resolve({ data: buffer });
+            this.pendingRequests.delete(id);
+        }
+    };
+
+    private handleError(e: ErrorEvent) {
+        console.error('Worker error:', e);
+        this.pendingRequests.forEach((request) => {
+            request.reject(new Error('Worker error occurred'));
+        });
+        this.pendingRequests.clear();
+    }
+
+    // // 全てのリクエストをキャンセル
+    // cancelAllRequests() {
+    //     if (this.pendingRequests.size > 0) {
+    //         this.pendingRequests.forEach(({ reject, controller }) => {
+    //             controller.abort(); // AbortControllerをキャンセル
+    //             reject(new Error('Request cancelled'));
+    //         });
+    //     }
+
+    //     console.info('All requests have been cancelled.');
+    //     this.pendingRequests.clear();
+    // }
+
+    // // タイルキャッシュをクリア
+    // clearCache() {
+    //     this.tileCache.clear();
+    // }
+}
+
+class WorkerProtocolPool {
+    private workers: WorkerProtocol[] = [];
+    private workerIndex = 0;
+    private poolSize: number;
+
+    constructor(poolSize: number) {
+        this.poolSize = poolSize;
+
+        // 指定されたプールサイズのワーカープロトコルを作成
+        for (let i = 0; i < poolSize; i++) {
+            const worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' });
+            this.workers.push(new WorkerProtocol(worker));
+        }
+    }
+
+    // ラウンドロビン方式で次のワーカーを取得
+    private getNextWorker(): WorkerProtocol {
+        const worker = this.workers[this.workerIndex];
+        this.workerIndex = (this.workerIndex + 1) % this.poolSize;
+        return worker;
+    }
+
+    // タイルリクエストを処理する
+    async request(url: URL, controller: AbortController): Promise<{ data: Uint8Array }> {
+        const worker = this.getNextWorker();
+        return worker.request(url, controller);
+    }
+
+    // // 全てのリクエストをキャンセル
+    // cancelAllRequests() {
+    //     this.workers.forEach((worker) => worker.cancelAllRequests());
+    // }
+
+    // // 全てのタイルキャッシュをクリア
+    // clearCache() {
+    //     this.workers.forEach((worker) => worker.clearCache());
+    // }
+}
+
+// const coreCount = navigator.hardwareConcurrency || 4;
+// const optimalThreads = Math.max(1, Math.floor(coreCount * 0.75));
+const workerProtocolPool = new WorkerProtocolPool(4); // 4つのワーカースレッドを持つプールを作成
+
+export const webglProtocol = (protocolName: string) => {
+    return {
+        request: (params: { url: string }, abortController: AbortController) => {
+            const urlWithoutProtocol = params.url.replace(`${protocolName}://`, '');
+            const url = new URL(urlWithoutProtocol);
+            return workerProtocolPool.request(url, abortController);
+        },
+        // cancelAllRequests: () => workerProtocolPool.cancelAllRequests(),
+        // clearCache: () => workerProtocolPool.clearCache(),
+    };
+};
 
 const protocol = webglProtocol('webgl');
 maplibregl.addProtocol('webgl', protocol.request);
@@ -45,26 +587,7 @@ const map = new maplibregl.Map({
     renderWorldCopies: false,
 });
 
-map.addControl(new maplibregl.NavigationControl(), 'top-right');
-// 現在地
-map.addControl(
-    new maplibregl.GeolocateControl({
-        positionOptions: {
-            enableHighAccuracy: true,
-        },
-        trackUserLocation: true,
-    }),
-    'top-right',
-);
-
-// スケールバーの追加
-map.addControl(
-    new maplibregl.ScaleControl({
-        maxWidth: 200, // スケールの最大幅
-        unit: 'metric', // 単位
-    }),
-    'bottom-left',
-);
+// コントロール系
 
 const reloadTiles = debounce(() => {
     // protocol.cancelAllRequests();

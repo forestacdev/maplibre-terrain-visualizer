@@ -1,6 +1,5 @@
 import fsSource from './shader/fragment.glsl?raw';
 import vsSource from './shader/vertex.glsl?raw';
-import type { DemEntry } from '../../utils';
 import chroma from 'chroma-js';
 
 let gl: WebGL2RenderingContext | null = null;
