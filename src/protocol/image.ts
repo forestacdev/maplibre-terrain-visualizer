@@ -3,9 +3,9 @@ import type { textureDataKey } from '../utils';
 import { textureData } from '../utils';
 
 type TileImageData = { [position: string]: { tileId: string; image: ImageBitmap } };
-// タイル画像のキャッシュ
-export class TileCache {
-    private static instance: TileCache;
+// タイル画像
+export class TileImageManager {
+    private static instance: TileImageManager;
     private cache: Map<string, ImageBitmap>;
     private cacheSizeLimit: number;
     private cacheOrder: string[];
@@ -16,12 +16,12 @@ export class TileCache {
         this.cacheOrder = [];
     }
 
-    // TileCache のインスタンスを取得する静的メソッド
-    public static getInstance(cacheSizeLimit = 500): TileCache {
-        if (!TileCache.instance) {
-            TileCache.instance = new TileCache(cacheSizeLimit);
+    // TileImageManager のインスタンスを取得する静的メソッド
+    public static getInstance(cacheSizeLimit = 500): TileImageManager {
+        if (!TileImageManager.instance) {
+            TileImageManager.instance = new TileImageManager(cacheSizeLimit);
         }
-        return TileCache.instance;
+        return TileImageManager.instance;
     }
 
     public async loadImage(src: string, signal: AbortSignal): Promise<ImageBitmap> {
@@ -122,8 +122,8 @@ export class TileCache {
     }
 }
 
-// カラーマップのキャッシュ
-export class ColorMapCache {
+// カラーマップ
+export class ColorMapManager {
     private cache: Map<string, Uint8Array>;
     public constructor() {
         this.cache = new Map();
@@ -182,8 +182,8 @@ export class ColorMapCache {
     }
 }
 
-// テクスチャのキャッシュ
-export class TextureCache {
+// テクスチャ
+export class TextureManager {
     private cache: Map<string, ImageBitmap>;
 
     public constructor() {

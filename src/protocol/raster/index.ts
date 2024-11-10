@@ -1,6 +1,6 @@
 import { DEM_DATA_TYPE, demEntry, tileOptions } from '../../utils';
 import type { DemDataTypeKey } from '../../utils';
-import { TileCache, ColorMapCache, TextureCache } from '../image';
+import { TileImageManager, ColorMapManager, TextureManager } from '../image';
 import { HAS_DEBUG_TILE, debugTileImage } from '../debug';
 
 class WorkerProtocol {
@@ -13,16 +13,16 @@ class WorkerProtocol {
             controller: AbortController;
         }
     >;
-    private tileCache: TileCache;
-    private colorMapCache: ColorMapCache;
-    private textureCache: TextureCache;
+    private tileCache: TileImageManager;
+    private colorMapCache: ColorMapManager;
+    private textureCache: TextureManager;
 
     constructor(worker: Worker) {
         this.worker = worker;
         this.pendingRequests = new Map();
-        this.tileCache = TileCache.getInstance(); // シングルトンインスタンスの取得
-        this.colorMapCache = new ColorMapCache();
-        this.textureCache = new TextureCache();
+        this.tileCache = TileImageManager.getInstance(); // シングルトンインスタンスの取得
+        this.colorMapCache = new ColorMapManager();
+        this.textureCache = new TextureManager();
         this.worker.addEventListener('message', this.handleMessage);
         this.worker.addEventListener('error', this.handleError);
     }
@@ -162,9 +162,9 @@ class WorkerProtocolPool {
     }
 }
 
-const coreCount = navigator.hardwareConcurrency || 4;
-const optimalThreads = Math.max(1, Math.floor(coreCount * 0.75));
-const workerProtocolPool = new WorkerProtocolPool(optimalThreads); // 4つのワーカースレッドを持つプールを作成
+// const coreCount = navigator.hardwareConcurrency || 4;
+// const optimalThreads = Math.max(1, Math.floor(coreCount * 0.75));
+const workerProtocolPool = new WorkerProtocolPool(4); // 4つのワーカースレッドを持つプールを作成
 
 export const demProtocol = (protocolName: string) => {
     return {
