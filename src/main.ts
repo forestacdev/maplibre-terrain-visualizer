@@ -536,22 +536,11 @@ const map = new maplibregl.Map({
 
 // コントロール系
 
-const reloadTiles = debounce(() => {
-    // protocol.cancelAllRequests();
-    const _source = map.getSource('webgl') as RasterTileSource;
-    _source.setTiles([`webgl://https://rinya-tochigi.geospatial.jp/2023/rinya/tile/terrainRGB/{z}/{x}/{y}.png?x={x}&y={y}&z={z}`]);
-}, 100);
-
 const gui = new GUI({
     title: 'コントロール',
     container: document.getElementById('gui') as HTMLElement,
     width: window.innerWidth < 768 ? window.innerWidth - 50 : 350,
 });
-
-// 画面サイズに応じてGUIを折りたたむ
-if (window.innerWidth < 768) {
-    gui.close();
-}
 
 // const createColors = (colorMap: string): string => {
 //     const options = {
