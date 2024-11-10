@@ -104,7 +104,7 @@ const bindTextures = (gl: WebGL2RenderingContext, program: WebGLProgram, texture
 };
 
 type UniformValue = {
-    type: '1f' | '1i' | '4fv' | '3fv'; // 具体的な型指定
+    type: '1f' | '1i' | '4fv' | '3fv'; // 型指定
     value: number | Float32Array | Int32Array | number[];
 };
 

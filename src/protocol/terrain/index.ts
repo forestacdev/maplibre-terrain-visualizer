@@ -1,6 +1,6 @@
 import { DEM_DATA_TYPE, demEntry } from '../../utils';
 import type { DemDataTypeKey } from '../../utils';
-import { TileCache } from '../image';
+import { TileImageManager } from '../image';
 
 class WorkerProtocol {
     private worker: Worker;
@@ -12,12 +12,12 @@ class WorkerProtocol {
             controller: AbortController;
         }
     >;
-    private tileCache: TileCache;
+    private tileCache: TileImageManager;
 
     constructor(worker: Worker) {
         this.worker = worker;
         this.pendingRequests = new Map();
-        this.tileCache = TileCache.getInstance(); // シングルトンインスタンスの取得
+        this.tileCache = TileImageManager.getInstance(); // シングルトンインスタンスの取得
         this.worker.addEventListener('message', this.handleMessage);
         this.worker.addEventListener('error', this.handleError);
     }
