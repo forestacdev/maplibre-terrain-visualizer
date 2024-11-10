@@ -104,23 +104,23 @@ class WorkerProtocol {
         this.pendingRequests.clear();
     }
 
-    // 全てのリクエストをキャンセル
-    cancelAllRequests() {
-        if (this.pendingRequests.size > 0) {
-            this.pendingRequests.forEach(({ reject, controller }) => {
-                controller.abort(); // AbortControllerをキャンセル
-                reject(new Error('Request cancelled'));
-            });
-        }
+    // // 全てのリクエストをキャンセル
+    // cancelAllRequests() {
+    //     if (this.pendingRequests.size > 0) {
+    //         this.pendingRequests.forEach(({ reject, controller }) => {
+    //             controller.abort(); // AbortControllerをキャンセル
+    //             reject(new Error('Request cancelled'));
+    //         });
+    //     }
 
-        console.info('All requests have been cancelled.');
-        this.pendingRequests.clear();
-    }
+    //     console.info('All requests have been cancelled.');
+    //     this.pendingRequests.clear();
+    // }
 
-    // タイルキャッシュをクリア
-    clearCache() {
-        this.tileCache.clear();
-    }
+    // // タイルキャッシュをクリア
+    // clearCache() {
+    //     this.tileCache.clear();
+    // }
 }
 
 class WorkerProtocolPool {
@@ -151,30 +151,29 @@ class WorkerProtocolPool {
         return worker.request(url, controller);
     }
 
-    // 全てのリクエストをキャンセル
-    cancelAllRequests() {
-        this.workers.forEach((worker) => worker.cancelAllRequests());
-    }
+    // // 全てのリクエストをキャンセル
+    // cancelAllRequests() {
+    //     this.workers.forEach((worker) => worker.cancelAllRequests());
+    // }
 
-    // 全てのタイルキャッシュをクリア
-    clearCache() {
-        this.workers.forEach((worker) => worker.clearCache());
-    }
+    // // 全てのタイルキャッシュをクリア
+    // clearCache() {
+    //     this.workers.forEach((worker) => worker.clearCache());
+    // }
 }
 
 // const coreCount = navigator.hardwareConcurrency || 4;
 // const optimalThreads = Math.max(1, Math.floor(coreCount * 0.75));
 const workerProtocolPool = new WorkerProtocolPool(4); // 4つのワーカースレッドを持つプールを作成
 
-export const demProtocol = (protocolName: string) => {
+export const webglProtocol = (protocolName: string) => {
     return {
-        protocolName,
         request: (params: { url: string }, abortController: AbortController) => {
             const urlWithoutProtocol = params.url.replace(`${protocolName}://`, '');
             const url = new URL(urlWithoutProtocol);
             return workerProtocolPool.request(url, abortController);
         },
-        cancelAllRequests: () => workerProtocolPool.cancelAllRequests(),
-        clearCache: () => workerProtocolPool.clearCache(),
+        // cancelAllRequests: () => workerProtocolPool.cancelAllRequests(),
+        // clearCache: () => workerProtocolPool.clearCache(),
     };
 };

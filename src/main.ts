@@ -4,18 +4,14 @@ import type { RasterTileSource } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { GUI } from 'lil-gui';
 import { demEntry, demLayers, isBBoxOverlapping, isColorMapParameter, isTextureParameter } from './utils';
-import { demProtocol } from './protocol/raster';
-import { terrainProtocol } from './protocol/terrain';
+import { webglProtocol } from './protocol/raster';
 import chroma from 'chroma-js';
 import colormap from 'colormap';
 import debounce from 'lodash.debounce';
 import { backgroundSources, tileOptions } from './utils';
 
-const protocol = demProtocol('webgl');
-maplibregl.addProtocol(protocol.protocolName, protocol.request);
-
-const protocol2 = terrainProtocol('terrain');
-maplibregl.addProtocol(protocol2.protocolName, protocol2.request);
+const protocol = webglProtocol('webgl');
+maplibregl.addProtocol('webgl', protocol.request);
 
 // 地図の表示
 const map = new maplibregl.Map({
@@ -24,26 +20,9 @@ const map = new maplibregl.Map({
         version: 8,
         glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
         sources: {
-            terrain: {
-                type: 'raster-dem',
-                tiles: [`${protocol2.protocolName}://${demEntry.url}?x={x}&y={y}&z={z}`],
-                tileSize: 256,
-                minzoom: demEntry.sourceMinZoom,
-                maxzoom: demEntry.sourceMaxZoom,
-                attribution: demEntry.attribution,
-                bounds: demEntry.bbox,
-            },
-            background: {
-                type: 'raster',
-                tiles: ['https://tile.mierune.co.jp/mierune_mono/{z}/{x}/{y}.png'],
-                tileSize: 256,
-                maxzoom: 18,
-                attribution:
-                    '<a href="https://mierune.co.jp">MIERUNE Inc.</a> <a href="https://www.openmaptiles.org/" target="_blank">&copy; OpenMapTiles</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">&copy; OpenStreetMap contributors</a>',
-            },
             custom: {
                 type: 'raster',
-                tiles: [`${protocol.protocolName}://${demEntry.url}?x={x}&y={y}&z={z}`],
+                tiles: [`webgl://https://rinya-tochigi.geospatial.jp/2023/rinya/tile/terrainRGB/{z}/{x}/{y}.png?x={x}&y={y}&z={z}`],
                 tileSize: 256,
                 minzoom: demEntry.sourceMinZoom,
                 maxzoom: demEntry.sourceMaxZoom,
@@ -53,31 +32,17 @@ const map = new maplibregl.Map({
         },
         layers: [
             {
-                id: 'background_layer',
-                source: 'background',
-                type: 'raster',
-            },
-            {
                 id: 'custom_layer',
                 source: 'custom',
                 type: 'raster',
                 maxzoom: 24,
             },
         ],
-        sky: {
-            'sky-color': '#2baeff',
-            'sky-horizon-blend': 0.5,
-            'horizon-color': '#ffffff',
-            'horizon-fog-blend': 0.5,
-            'fog-color': '#2222ff',
-            'fog-ground-blend': 0.5,
-            'atmosphere-blend': ['interpolate', ['linear'], ['zoom'], 0, 1, 10, 1, 12, 0],
-        },
     },
-    center: [138.3863, 35.3379],
-    zoom: 10,
+    center: [139.53764, 36.76931],
+    zoom: 14,
     maxPitch: 85,
-    // hash: true,
+    hash: true,
     renderWorldCopies: false,
 });
 
@@ -105,68 +70,8 @@ map.addControl(
 const reloadTiles = debounce(() => {
     // protocol.cancelAllRequests();
     const _source = map.getSource('custom') as RasterTileSource;
-    _source.setTiles([`${protocol.protocolName}://${demEntry.url}?x={x}&y={y}&z={z}`]);
+    _source.setTiles([`webgl://https://rinya-tochigi.geospatial.jp/2023/rinya/tile/terrainRGB/{z}/{x}/{y}.png?x={x}&y={y}&z={z}`]);
 }, 100);
-
-const resetDem = () => {
-    protocol.cancelAllRequests();
-    protocol.clearCache();
-
-    map.removeLayer('custom_layer');
-    map.removeSource('custom');
-    map.addSource('custom', {
-        type: 'raster',
-        tiles: [`${protocol.protocolName}://${demEntry.url}?x={x}&y={y}&z={z}&demType=${demEntry.demType}&maxzoom=${demEntry.sourceMaxZoom}`],
-        tileSize: 256,
-    });
-    map.addLayer({
-        id: 'custom_layer',
-        source: 'custom',
-        type: 'raster',
-    });
-
-    const has3D = map.getTerrain();
-    map.setTerrain(null);
-    map.removeSource('terrain');
-
-    protocol2.cancelAllRequests();
-
-    map.addSource('terrain', {
-        type: 'raster-dem',
-        tiles: [`${protocol2.protocolName}://${demEntry.url}?demType=${demEntry.demType}`],
-        tileSize: 256,
-        minzoom: demEntry.sourceMinZoom,
-        maxzoom: demEntry.sourceMaxZoom,
-        attribution: demEntry.attribution,
-        bounds: demEntry.bbox,
-    });
-
-    if (has3D) {
-        map.setTerrain({
-            source: 'terrain',
-            exaggeration: 1,
-        });
-    }
-
-    const bbox = demEntry.bbox;
-    if (!bbox) return;
-
-    const bounds = map.getBounds().toArray();
-
-    const zoom = map.getZoom();
-
-    if (!isBBoxOverlapping(demEntry.bbox, [...bounds[0], ...bounds[1]] as [number, number, number, number])) {
-        map.fitBounds(bbox, {
-            padding: 100,
-            duration: 300,
-            bearing: map.getBearing(),
-        });
-    }
-
-    if (zoom < demEntry.sourceMinZoom || zoom > demEntry.sourceMaxZoom) {
-        map.setZoom(demEntry.sourceMaxZoom - 1.5);
-    }
-};
 
 const gui = new GUI({
     title: 'コントロール',
@@ -193,7 +98,6 @@ gui.add(
             demEntry.sourceMinZoom = layer.minzoom;
             demEntry.sourceMaxZoom = layer.maxzoom;
             demEntry.bbox = layer.bbox;
-            resetDem();
         }
     });
 
