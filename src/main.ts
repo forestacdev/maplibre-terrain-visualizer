@@ -5,96 +5,49 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import { GUI } from 'lil-gui';
 import colormap from 'colormap';
 
-type NumberParameter = {
-    name: string;
-    value: number;
-    min: number;
-    max: number;
-    step: number;
-};
-
-type ColorParameter = {
-    name: string;
-    value: string;
-};
-
+// ユニフォーム
 export type UniformsData = {
     evolution: {
-        opacity: NumberParameter;
-        maxHeight: NumberParameter;
-        minHeight: NumberParameter;
+        opacity: number;
+        maxHeight: number;
+        minHeight: number;
     };
     shadow: {
-        opacity: NumberParameter;
-        shadowColor: ColorParameter;
-        highlightColor: ColorParameter;
-        ambient: NumberParameter;
-        azimuth: NumberParameter;
-        altitude: NumberParameter;
+        opacity: number;
+        shadowColor: string;
+        highlightColor: string;
+        ambient: number;
+        azimuth: number;
+        altitude: number;
     };
     edge: {
-        opacity: NumberParameter;
-        edgeIntensity: NumberParameter;
-        edgeColor: ColorParameter;
+        opacity: number;
+        edgeIntensity: number;
+        edgeColor: string;
     };
 };
 
 export const uniformsData: UniformsData = {
+    // 標高
     evolution: {
-        // 不透明度
-        opacity: {
-            value: 1.0,
-        },
-        // 最大標高
-        maxHeight: {
-            value: 2500,
-        },
-        // 最小標高
-        minHeight: {
-            value: 500,
-        },
+        opacity: 1.0, // 不透明度
+        maxHeight: 2500, // 最大標高値
+        minHeight: 500, // 最小標高値
     },
+    // 陰影
     shadow: {
-        // 不透明度
-        opacity: {
-            value: 0.8,
-        },
-        // 陰影色
-        shadowColor: {
-            value: '#000000',
-        },
-        // ハイライト色
-        highlightColor: {
-            value: '#00ff9d',
-        },
-        // 環境光
-        ambient: {
-            value: 0.3,
-        },
-
-        // 方位
-        azimuth: {
-            value: 0,
-        },
-
-        // 太陽高度
-        altitude: {
-            value: 30,
-        },
+        opacity: 0.8, // 不透明度
+        shadowColor: '#000000', // 陰影色
+        highlightColor: '#00ff9d', // ハイライト色
+        ambient: 0.3, // 環境光
+        azimuth: 0, // 方位
+        altitude: 30, // 太陽高度
     },
+    // エッジ
     edge: {
-        // 不透明度
-        opacity: {
-            value: 0.9,
-        },
-        // エッジ強度
-        edgeIntensity: {
-            value: 0.4,
-        },
-        // エッジカラー
-        edgeColor: {
-            value: '#ffffff',
-        },
+        opacity: 0.9, // 不透明度
+        edgeIntensity: 0.4, // エッジ強度
+        edgeColor: '#ffffff', // エッジカラー
     },
 };
 
@@ -330,24 +283,6 @@ class WorkerProtocol {
         });
         this.pendingRequests.clear();
     }
-
-    // // 全てのリクエストをキャンセル
-    // cancelAllRequests() {
-    //     if (this.pendingRequests.size > 0) {
-    //         this.pendingRequests.forEach(({ reject, controller }) => {
-    //             controller.abort(); // AbortControllerをキャンセル
-    //             reject(new Error('Request cancelled'));
-    //         });
-    //     }
-
-    //     console.info('All requests have been cancelled.');
-    //     this.pendingRequests.clear();
-    // }
-
-    // // タイルキャッシュをクリア
-    // clearCache() {
-    //     this.tileCache.clear();
-    // }
 }
 
 class WorkerProtocolPool {
@@ -377,36 +312,17 @@ class WorkerProtocolPool {
         const worker = this.getNextWorker();
         return worker.request(url, controller);
     }
-
-    // // 全てのリクエストをキャンセル
-    // cancelAllRequests() {
-    //     this.workers.forEach((worker) => worker.cancelAllRequests());
-    // }
-
-    // // 全てのタイルキャッシュをクリア
-    // clearCache() {
-    //     this.workers.forEach((worker) => worker.clearCache());
-    // }
 }
 
 // const coreCount = navigator.hardwareConcurrency || 4;
 // const optimalThreads = Math.max(1, Math.floor(coreCount * 0.75));
 const workerProtocolPool = new WorkerProtocolPool(4); // 4つのワーカースレッドを持つプールを作成
 
-export const webglProtocol = (protocolName: string) => {
-    return {
-        request: (params: { url: string }, abortController: AbortController) => {
-            const urlWithoutProtocol = params.url.replace(`${protocolName}://`, '');
-            const url = new URL(urlWithoutProtocol);
-            return workerProtocolPool.request(url, abortController);
-        },
-        // cancelAllRequests: () => workerProtocolPool.cancelAllRequests(),
-        // clearCache: () => workerProtocolPool.clearCache(),
-    };
-};
-
-const protocol = webglProtocol('webgl');
-maplibregl.addProtocol('webgl', protocol.request);
+maplibregl.addProtocol('webgl', (params, abortController) => {
+    const urlWithoutProtocol = params.url.replace(`webgl://`, '');
+    const url = new URL(urlWithoutProtocol);
+    return workerProtocolPool.request(url, abortController);
+});
 
 // 地図の表示
 const map = new maplibregl.Map({
@@ -415,9 +331,10 @@ const map = new maplibregl.Map({
         version: 8,
         glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
         sources: {
+            // addProtocolでカスタム処理を加えるsource
             webgl: {
                 type: 'raster',
-                tiles: [`webgl://https://rinya-tochigi.geospatial.jp/2023/rinya/tile/terrainRGB/{z}/{x}/{y}.png?x={x}&y={y}&z={z}`],
+                tiles: [`webgl://https://rinya-tochigi.geospatial.jp/2023/rinya/tile/terrainRGB/{z}/{x}/{y}.png?x={x}&y={y}&z={z}`], // タイル座標の部分をURLパラメーターに持たせる
                 tileSize: 256,
                 minzoom: 2,
                 maxzoom: 18,
@@ -436,8 +353,7 @@ const map = new maplibregl.Map({
     },
     center: [139.50785, 36.7751],
     zoom: 13.5,
-    // hash: true,
-    renderWorldCopies: false,
+    renderWorldCopies: false, // 地図をループさせない
 });
 
 // コントロール系
