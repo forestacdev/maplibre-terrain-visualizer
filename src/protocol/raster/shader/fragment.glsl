@@ -1,12 +1,5 @@
 #version 300 es
-#ifdef GL_FRAGMENT_PRECISION_HIGH
 precision highp float;
-#else
-precision mediump float;
-#define GLSLIFY 1
-#endif
-
-uniform bool u_only_center; // 中心タイルのみのフラグ
 
 uniform sampler2D u_height_map_center;
 uniform sampler2D u_height_map_left;
@@ -14,47 +7,24 @@ uniform sampler2D u_height_map_right;
 uniform sampler2D u_height_map_top;
 uniform sampler2D u_height_map_bottom;
 
-uniform float u_zoom_level;
-uniform float u_max_zoom;
-
-
-
 uniform sampler2D u_evolutionMap;
-
-
 uniform float u_evolution_alpha;
-uniform float u_slope_alpha;
-uniform float u_aspect_alpha;
-uniform float u_curvature_alpha;
-uniform float u_edge_alpha;
-uniform float u_shadow_strength;
-uniform float u_ambient;
-uniform float u_contour_alpha;
-uniform float u_flooding_alpha;
-
-uniform vec4 u_shadow_color;
-uniform vec4 u_highlight_color;
-uniform vec4 u_ridge_color;
-uniform vec4 u_valley_color;
-uniform vec4 u_edge_color;
-uniform vec4 u_contour_color;
-
-uniform float u_ridge_threshold;
-uniform float u_valley_threshold;
-uniform float u_edge_intensity;
-uniform float u_contour_count;
-uniform float u_water_level;
-
 uniform float u_max_height;
 uniform float u_min_height;
-uniform float u_contour_max_height;
+
+uniform float u_shadow_strength;
+uniform float u_ambient;
 uniform vec3 u_light_direction;
+uniform vec4 u_shadow_color;
+uniform vec4 u_highlight_color;
+
+uniform float u_zoom_level;
+uniform float u_edge_alpha;
+uniform vec4 u_edge_color;
+uniform float u_edge_intensity;
+
 in vec2 v_tex_coord ;
 out vec4 fragColor;
-
-
-
-
 
 // 高さ変換関数
 // float convertToHeight(vec4 color) {
@@ -92,7 +62,7 @@ vec4 getColorFromMap(sampler2D map, float value) {
 
 struct TerrainData {
     vec3 normal;
-    mat3 height_matrix;
+    mat3 h_mat;
 };
 
 
@@ -122,7 +92,7 @@ TerrainData calculateTerrainData(vec2 uv) {
 
     // 端の場合は隣接テクスチャからサンプル
     // 左上
-    data.height_matrix[0][0] = convertToHeight(
+    data.h_mat[0][0] = convertToHeight(
         (uv.x <= pixel_size.x && uv.y <= pixel_size.y) ? texture(u_height_map_left, uv + vec2(1.0 - pixel_size.x, 1.0 - pixel_size.y)) :
         (uv.y <= pixel_size.y) ? texture(u_height_map_top, uv + vec2(-pixel_size.x, 1.0 - pixel_size.y)) :
         (uv.x <= pixel_size.x) ? texture(u_height_map_left, uv + vec2(1.0 - pixel_size.x, -pixel_size.y)) :
@@ -130,13 +100,13 @@ TerrainData calculateTerrainData(vec2 uv) {
     );
 
     // 上
-    data.height_matrix[0][1] = convertToHeight(
+    data.h_mat[0][1] = convertToHeight(
         (uv.y <= pixel_size.y) ? texture(u_height_map_top, uv + vec2(0.0, 1.0 - pixel_size.y)) :
         texture(u_height_map_center, uv + vec2(0.0, -pixel_size.y))
     );
 
     // 右上
-    data.height_matrix[0][2] = convertToHeight(
+    data.h_mat[0][2] = convertToHeight(
         (uv.x >= 1.0 - pixel_size.x && uv.y <= pixel_size.y) ? texture(u_height_map_right, uv + vec2(-1.0 + pixel_size.x, 1.0 - pixel_size.y)) :
         (uv.y <= pixel_size.y) ? texture(u_height_map_top, uv + vec2(pixel_size.x, 1.0 - pixel_size.y)) :
         (uv.x >= 1.0 - pixel_size.x) ? texture(u_height_map_right, uv + vec2(-1.0 + pixel_size.x, -pixel_size.y)) :
@@ -144,22 +114,22 @@ TerrainData calculateTerrainData(vec2 uv) {
     );
 
     // 左
-    data.height_matrix[1][0] = convertToHeight(
+    data.h_mat[1][0] = convertToHeight(
         (uv.x <= pixel_size.x) ? texture(u_height_map_left, uv + vec2(1.0 - pixel_size.x, 0.0)) :
         texture(u_height_map_center, uv + vec2(-pixel_size.x, 0.0))
     );
 
     // 中央
-    data.height_matrix[1][1] = convertToHeight(texture(u_height_map_center, uv));
+    data.h_mat[1][1] = convertToHeight(texture(u_height_map_center, uv));
 
     // 右
-    data.height_matrix[1][2] = convertToHeight(
+    data.h_mat[1][2] = convertToHeight(
         (uv.x >= 1.0 - pixel_size.x) ? texture(u_height_map_right, uv + vec2(-1.0 + pixel_size.x, 0.0)) :
         texture(u_height_map_center, uv + vec2(pixel_size.x, 0.0))
     );
 
     // 左下
-    data.height_matrix[2][0] = convertToHeight(
+    data.h_mat[2][0] = convertToHeight(
         (uv.x <= pixel_size.x && uv.y >= 1.0 - pixel_size.y) ? texture(u_height_map_left, uv + vec2(1.0 - pixel_size.x, -1.0 + pixel_size.y)) :
         (uv.y >= 1.0 - pixel_size.y) ? texture(u_height_map_bottom, uv + vec2(-pixel_size.x, -1.0 + pixel_size.y)) :
         (uv.x <= pixel_size.x) ? texture(u_height_map_left, uv + vec2(1.0 - pixel_size.x, pixel_size.y)) :
@@ -167,13 +137,13 @@ TerrainData calculateTerrainData(vec2 uv) {
     );
 
     // 下
-    data.height_matrix[2][1] = convertToHeight(
+    data.h_mat[2][1] = convertToHeight(
         (uv.y >= 1.0 - pixel_size.y) ? texture(u_height_map_bottom, uv + vec2(0.0, -1.0 + pixel_size.y)) :
         texture(u_height_map_center, uv + vec2(0.0, pixel_size.y))
     );
 
     // 右下
-    data.height_matrix[2][2] = convertToHeight(
+    data.h_mat[2][2] = convertToHeight(
         (uv.x >= 1.0 - pixel_size.x && uv.y >= 1.0 - pixel_size.y) ? texture(u_height_map_right, uv + vec2(-1.0 + pixel_size.x, -1.0 + pixel_size.y)) :
         (uv.y >= 1.0 - pixel_size.y) ? texture(u_height_map_bottom, uv + vec2(pixel_size.x, -1.0 + pixel_size.y)) :
         (uv.x >= 1.0 - pixel_size.x) ? texture(u_height_map_right, uv + vec2(-1.0 + pixel_size.x, pixel_size.y)) :
@@ -181,10 +151,10 @@ TerrainData calculateTerrainData(vec2 uv) {
     );
 
     // 法線の計算
-    data.normal.x = (data.height_matrix[0][0] + data.height_matrix[0][1] + data.height_matrix[0][2]) - 
-                    (data.height_matrix[2][0] + data.height_matrix[2][1] + data.height_matrix[2][2]);
-    data.normal.y = (data.height_matrix[0][0] + data.height_matrix[1][0] + data.height_matrix[2][0]) - 
-                    (data.height_matrix[0][2] + data.height_matrix[1][2] + data.height_matrix[2][2]);
+    data.normal.x = (data.h_mat[0][0] + data.h_mat[0][1] + data.h_mat[0][2]) - 
+                    (data.h_mat[2][0] + data.h_mat[2][1] + data.h_mat[2][2]);
+    data.normal.y = (data.h_mat[0][0] + data.h_mat[1][0] + data.h_mat[2][0]) - 
+                    (data.h_mat[0][2] + data.h_mat[1][2] + data.h_mat[2][2]);
     data.normal.z = 2.0 * pixel_size.x * 256.0; // スケーリング係数
     data.normal = normalize(data.normal);
 
@@ -194,6 +164,7 @@ TerrainData calculateTerrainData(vec2 uv) {
 
 void main() {
     vec2 uv = v_tex_coord ;
+
     vec4 color = texture(u_height_map_center, uv);
 
 
@@ -204,12 +175,10 @@ void main() {
     terrain_data = calculateTerrainData(uv);
 
 
-    float height = convertToHeight(color);
-    float normalized_height = clamp((height - u_min_height) / (u_max_height - u_min_height), 0.0, 1.0);
-    vec4 terrain_color = getColorFromMap(u_evolutionMap, normalized_height);
+    float h = convertToHeight(color);
+    float normalized_h = clamp((h - u_min_height) / (u_max_height - u_min_height), 0.0, 1.0);
+    vec4 terrain_color = getColorFromMap(u_evolutionMap, normalized_h);
     final_color = mix(final_color, terrain_color, u_evolution_alpha);
-    
-
 
     vec3 normal = terrain_data.normal;
 
@@ -244,8 +213,8 @@ void main() {
 
     // エッジ効果
     vec2 e = vec2(1.5/256.0, 0);
-    float edge_x = abs(terrain_data.height_matrix[1][2] - terrain_data.height_matrix[1][0]); // 左右の高さ差
-    float edge_y = abs(terrain_data.height_matrix[2][1] - terrain_data.height_matrix[0][1]); // 上下の高さ差
+    float edge_x = abs(terrain_data.h_mat[1][2] - terrain_data.h_mat[1][0]); // 左右の高さ差
+    float edge_y = abs(terrain_data.h_mat[2][1] - terrain_data.h_mat[0][1]); // 上下の高さ差
     
     float z = 0.5 * exp2(u_zoom_level - 17.0);
     float edge_intensity = z;
@@ -260,7 +229,5 @@ void main() {
     final_color.a = max(final_color.a, edge.a);
 
 
-
     fragColor = final_color;
-
 }
