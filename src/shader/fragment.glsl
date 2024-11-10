@@ -58,8 +58,6 @@ vec4 getColorFromMap(sampler2D map, float value) {
 }
 
 
-
-
 struct TerrainData {
     vec3 normal;
     mat3 h_mat;
@@ -179,6 +177,8 @@ void main() {
     float normalized_h = clamp((h - u_min_height) / (u_max_height - u_min_height), 0.0, 1.0);
     vec4 terrain_color = getColorFromMap(u_evolutionMap, normalized_h);
     final_color = mix(final_color, terrain_color, u_evolution_alpha);
+    // fragColor = final_color;
+    // return;
 
     vec3 normal = terrain_data.normal;
 

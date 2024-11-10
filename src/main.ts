@@ -339,7 +339,7 @@ const map = new maplibregl.Map({
             // addProtocolでカスタム処理を加えるsource
             webgl: {
                 type: 'raster',
-                tiles: [`https://rinya-tochigi.geospatial.jp/2023/rinya/tile/terrainRGB/{z}/{x}/{y}.png?x={x}&y={y}&z={z}`], // タイル座標の部分をURLパラメーターに持たせる
+                tiles: [`webgl://https://rinya-tochigi.geospatial.jp/2023/rinya/tile/terrainRGB/{z}/{x}/{y}.png?x={x}&y={y}&z={z}`], // タイル座標の部分をURLパラメーターに持たせる
                 tileSize: 256,
                 minzoom: 2,
                 maxzoom: 18,
