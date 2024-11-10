@@ -134,21 +134,21 @@ self.onmessage = async (e) => {
 
         const { evolution, shadow, edge } = uniformsData as UniformsData;
 
-        const lightDirection = calculateLightDirection(shadow.option.azimuth.value, shadow.option.altitude.value);
+        const lightDirection = calculateLightDirection(shadow.azimuth.value, shadow.altitude.value);
 
         const uniforms: Uniforms = {
             u_zoom_level: { type: '1f', value: z },
-            u_evolution_alpha: { type: '1f', value: evolution.option.opacity.value },
-            u_max_height: { type: '1f', value: evolution.option.maxHeight.value },
-            u_min_height: { type: '1f', value: evolution.option.minHeight.value },
-            u_shadow_strength: { type: '1f', value: shadow.option.opacity.value },
+            u_evolution_alpha: { type: '1f', value: evolution.opacity.value },
+            u_max_height: { type: '1f', value: evolution.maxHeight.value },
+            u_min_height: { type: '1f', value: evolution.minHeight.value },
+            u_shadow_strength: { type: '1f', value: shadow.opacity.value },
             u_light_direction: { type: '3fv', value: lightDirection },
-            u_shadow_color: { type: '4fv', value: chroma(shadow.option.shadowColor.value).gl() },
-            u_highlight_color: { type: '4fv', value: chroma(shadow.option.highlightColor.value).gl() },
-            u_ambient: { type: '1f', value: shadow.option.ambient.value },
-            u_edge_alpha: { type: '1f', value: edge.option.opacity.value },
-            u_edge_color: { type: '4fv', value: chroma(edge.option.edgeColor.value).gl() },
-            u_edge_intensity: { type: '1f', value: edge.option.edgeIntensity.value },
+            u_shadow_color: { type: '4fv', value: chroma(shadow.shadowColor.value).gl() },
+            u_highlight_color: { type: '4fv', value: chroma(shadow.highlightColor.value).gl() },
+            u_ambient: { type: '1f', value: shadow.ambient.value },
+            u_edge_alpha: { type: '1f', value: edge.opacity.value },
+            u_edge_color: { type: '4fv', value: chroma(edge.edgeColor.value).gl() },
+            u_edge_intensity: { type: '1f', value: edge.edgeIntensity.value },
         };
 
         setUniforms(gl, program, uniforms);

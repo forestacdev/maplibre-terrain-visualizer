@@ -79,135 +79,111 @@ export type colorMapParameter = {
 
 export type UniformsData = {
     evolution: {
-        name: string;
-        showMenu: boolean;
-        option: {
-            opacity: NumberParameter;
-            maxHeight: NumberParameter;
-            minHeight: NumberParameter;
-            colorMap: colorMapParameter;
-        };
+        opacity: NumberParameter;
+        maxHeight: NumberParameter;
+        minHeight: NumberParameter;
+        colorMap: colorMapParameter;
     };
     shadow: {
-        name: string;
-        showMenu: boolean;
-        option: {
-            opacity: NumberParameter;
-            shadowColor: ColorParameter;
-            highlightColor: ColorParameter;
-            ambient: NumberParameter;
-            azimuth: NumberParameter;
-            altitude: NumberParameter;
-        };
+        opacity: NumberParameter;
+        shadowColor: ColorParameter;
+        highlightColor: ColorParameter;
+        ambient: NumberParameter;
+        azimuth: NumberParameter;
+        altitude: NumberParameter;
     };
     edge: {
-        name: string;
-        showMenu: boolean;
-        option: {
-            opacity: NumberParameter;
-            edgeIntensity: NumberParameter;
-            edgeColor: ColorParameter;
-        };
+        opacity: NumberParameter;
+        edgeIntensity: NumberParameter;
+        edgeColor: ColorParameter;
     };
 };
 
 export const uniformsData: UniformsData = {
     evolution: {
-        name: '標高',
-        showMenu: true,
-        option: {
-            opacity: {
-                name: '透過度',
-                value: 1.0,
-                min: 0,
-                max: 1,
-                step: 0.01,
-            },
-            maxHeight: {
-                name: '最大標高',
-                value: 2500,
-                min: -10000,
-                max: 10000,
-                step: 0.1,
-            },
-            minHeight: {
-                name: '最小標高',
-                value: 500,
-                min: -10000,
-                max: 10000,
-                step: 0.1,
-            },
-            colorMap: {
-                name: 'カラーマップ',
-                value: 'phase',
-                selection: mutableColorMapType,
-            },
+        opacity: {
+            name: '透過度',
+            value: 1.0,
+            min: 0,
+            max: 1,
+            step: 0.01,
+        },
+        maxHeight: {
+            name: '最大標高',
+            value: 2500,
+            min: -10000,
+            max: 10000,
+            step: 0.1,
+        },
+        minHeight: {
+            name: '最小標高',
+            value: 500,
+            min: -10000,
+            max: 10000,
+            step: 0.1,
+        },
+        colorMap: {
+            name: 'カラーマップ',
+            value: 'phase',
+            selection: mutableColorMapType,
         },
     },
     shadow: {
-        name: '陰影',
-        showMenu: true,
-        option: {
-            opacity: {
-                name: '透過度',
-                value: 0.8,
-                min: 0,
-                max: 1,
-                step: 0.01,
-            },
-            shadowColor: {
-                name: '陰影色',
-                value: '#000000',
-            },
-            highlightColor: {
-                name: 'ハイライト色',
-                value: '#00ff9d',
-            },
-            ambient: {
-                name: '環境光',
-                value: 0.3,
-                min: 0,
-                max: 1,
-                step: 0.01,
-            },
-            azimuth: {
-                name: '方位',
-                value: 0,
-                min: 0,
-                max: 360,
-                step: 1,
-            },
-            altitude: {
-                name: '高度',
-                value: 30,
-                min: 0,
-                max: 90,
-                step: 1,
-            },
+        opacity: {
+            name: '透過度',
+            value: 0.8,
+            min: 0,
+            max: 1,
+            step: 0.01,
+        },
+        shadowColor: {
+            name: '陰影色',
+            value: '#000000',
+        },
+        highlightColor: {
+            name: 'ハイライト色',
+            value: '#00ff9d',
+        },
+        ambient: {
+            name: '環境光',
+            value: 0.3,
+            min: 0,
+            max: 1,
+            step: 0.01,
+        },
+        azimuth: {
+            name: '方位',
+            value: 0,
+            min: 0,
+            max: 360,
+            step: 1,
+        },
+        altitude: {
+            name: '高度',
+            value: 30,
+            min: 0,
+            max: 90,
+            step: 1,
         },
     },
     edge: {
-        name: 'エッジ',
-        showMenu: true,
-        option: {
-            opacity: {
-                name: '透過度',
-                value: 0.9,
-                min: 0,
-                max: 1,
-                step: 0.01,
-            },
-            edgeIntensity: {
-                name: 'エッジ強度',
-                value: 0.4,
-                min: 0,
-                max: 2,
-                step: 0.01,
-            },
-            edgeColor: {
-                name: 'エッジ色',
-                value: '#ffffff',
-            },
+        opacity: {
+            name: '透過度',
+            value: 0.9,
+            min: 0,
+            max: 1,
+            step: 0.01,
+        },
+        edgeIntensity: {
+            name: 'エッジ強度',
+            value: 0.4,
+            min: 0,
+            max: 2,
+            step: 0.01,
+        },
+        edgeColor: {
+            name: 'エッジ色',
+            value: '#ffffff',
         },
     },
 };
@@ -410,7 +386,7 @@ class WorkerProtocol {
             const bottom = images.bottom; // 下のタイル
             this.pendingRequests.set(tileId, { resolve, reject, controller });
 
-            const evolutionColorArray = this.colorMapCache.createColorArray(uniformsData.evolution.option.colorMap.value);
+            const evolutionColorArray = this.colorMapCache.createColorArray('cool');
 
             this.worker.postMessage({
                 tileId,
@@ -557,6 +533,7 @@ const map = new maplibregl.Map({
     // hash: true,
     renderWorldCopies: false,
 });
+
 // コントロール系
 
 const reloadTiles = debounce(() => {
@@ -576,105 +553,105 @@ if (window.innerWidth < 768) {
     gui.close();
 }
 
-const createColors = (colorMap: string): string => {
-    const options = {
-        colormap: colorMap, // colormap でサポートされているカラースケール名
-        nshades: 100, // 色の段階数
-        format: 'hex', // 色のフォーマット ('hex', 'rgb', 'rgba' など)
-        alpha: 1, // 透明度
-    };
+// const createColors = (colorMap: string): string => {
+//     const options = {
+//         colormap: colorMap, // colormap でサポートされているカラースケール名
+//         nshades: 100, // 色の段階数
+//         format: 'hex', // 色のフォーマット ('hex', 'rgb', 'rgba' など)
+//         alpha: 1, // 透明度
+//     };
 
-    const colorArray = colormap(options as any);
+//     const colorArray = colormap(options as any);
 
-    const scale = chroma.scale(colorArray as any).colors(100);
+//     const scale = chroma.scale(colorArray as any).colors(100);
 
-    // グラデーション用のカラーを文字列として連結
-    return scale.map((color) => color).join(', ');
-};
+//     // グラデーション用のカラーを文字列として連結
+//     return scale.map((color) => color).join(', ');
+// };
 
-// コントロールの制御
-const enableAllControllers = (controllers: Array<any>, activeController: any, value: boolean) => {
-    controllers.forEach((controller) => {
-        if (controller !== activeController) {
-            value ? controller.show() : controller.hide();
-        }
-    });
-};
+// // コントロールの制御
+// const enableAllControllers = (controllers: Array<any>, activeController: any, value: boolean) => {
+//     controllers.forEach((controller) => {
+//         if (controller !== activeController) {
+//             value ? controller.show() : controller.hide();
+//         }
+//     });
+// };
 
-// 各プロパティに対応するフォルダを作成
-Object.entries(uniformsData).forEach(([_key, data]) => {
-    let _folder: any;
-    _folder = gui.addFolder(data.name);
+// // 各プロパティに対応するフォルダを作成
+// Object.entries(uniformsData).forEach(([_key, data]) => {
+//     let _folder: any;
+//     _folder = gui.addFolder(data.name);
 
-    data.showMenu ? _folder.open() : _folder.close();
+//     data.showMenu ? _folder.open() : _folder.close();
 
-    // パラメータを保持しておくための配列
-    const paramControllers: Array<any> = [];
+//     // パラメータを保持しておくための配列
+//     const paramControllers: Array<any> = [];
 
-    Object.entries(data.option).forEach(([_prop, paramData]) => {
-        const div = document.createElement('div');
-        let controller: any;
+//     Object.entries(data.option).forEach(([_prop, paramData]) => {
+//         const div = document.createElement('div');
+//         let controller: any;
 
-        if (typeof paramData === 'boolean') {
-            // _folder.add(paramData, prop).name(data.option[prop].name).onChange(reloadTiles);
-        } else if (typeof paramData !== 'string' && typeof paramData !== 'boolean' && 'value' in paramData) {
-            if (typeof paramData.value === 'boolean') {
-                controller = _folder
-                    .add(paramData, 'value')
-                    .name(paramData.name)
-                    .onChange((value: boolean) => {
-                        reloadTiles();
-                        enableAllControllers(paramControllers, controller, value);
-                    });
-            } else if (typeof paramData.value === 'number') {
-                controller = _folder.add(paramData, 'value', paramData.min, paramData.max, paramData.step).name(paramData.name).onChange(reloadTiles);
-            } else if (typeof paramData.value === 'string') {
-                if (isColorMapParameter(paramData)) {
-                    controller = _folder
-                        .add(paramData, 'value', paramData.selection)
-                        .name(paramData.name)
-                        .onChange((value: string) => {
-                            div.style.background = `linear-gradient(to right, ${createColors(value)})`;
-                            reloadTiles();
-                        });
-                    const children = _folder.$children.querySelector('.option');
-                    if (children) {
-                        // 小要素の追加
-                        div.style.height = '20px';
-                        div.style.width = '300px';
-                        div.style.background = `linear-gradient(to right, ${createColors(paramData.value)})`;
-                        // 選択肢の追加
-                        children.appendChild(div);
-                    }
+//         if (typeof paramData === 'boolean') {
+//             // _folder.add(paramData, prop).name(data.option[prop].name).onChange(reloadTiles);
+//         } else if (typeof paramData !== 'string' && typeof paramData !== 'boolean' && 'value' in paramData) {
+//             if (typeof paramData.value === 'boolean') {
+//                 controller = _folder
+//                     .add(paramData, 'value')
+//                     .name(paramData.name)
+//                     .onChange((value: boolean) => {
+//                         reloadTiles();
+//                         enableAllControllers(paramControllers, controller, value);
+//                     });
+//             } else if (typeof paramData.value === 'number') {
+//                 controller = _folder.add(paramData, 'value', paramData.min, paramData.max, paramData.step).name(paramData.name).onChange(reloadTiles);
+//             } else if (typeof paramData.value === 'string') {
+//                 if (isColorMapParameter(paramData)) {
+//                     controller = _folder
+//                         .add(paramData, 'value', paramData.selection)
+//                         .name(paramData.name)
+//                         .onChange((value: string) => {
+//                             div.style.background = `linear-gradient(to right, ${createColors(value)})`;
+//                             reloadTiles();
+//                         });
+//                     const children = _folder.$children.querySelector('.option');
+//                     if (children) {
+//                         // 小要素の追加
+//                         div.style.height = '20px';
+//                         div.style.width = '300px';
+//                         div.style.background = `linear-gradient(to right, ${createColors(paramData.value)})`;
+//                         // 選択肢の追加
+//                         children.appendChild(div);
+//                     }
 
-                    // カラーランプの反転チェックボックスの追加
-                    const reverseController = _folder
-                        .add(paramData, 'reverse')
-                        .name('カラーランプの反転')
-                        .onChange(() => {
-                            div.style.background = `linear-gradient(to right, ${createColors(paramData.value)})`;
-                            reloadTiles();
-                        });
+//                     // カラーランプの反転チェックボックスの追加
+//                     const reverseController = _folder
+//                         .add(paramData, 'reverse')
+//                         .name('カラーランプの反転')
+//                         .onChange(() => {
+//                             div.style.background = `linear-gradient(to right, ${createColors(paramData.value)})`;
+//                             reloadTiles();
+//                         });
 
-                    paramControllers.push(reverseController);
-                    if (!data.showMenu) {
-                        reverseController.hide();
-                    }
-                } else {
-                    controller = _folder.addColor(paramData, 'value').name(paramData.name).onChange(reloadTiles);
-                }
-            }
-        }
+//                     paramControllers.push(reverseController);
+//                     if (!data.showMenu) {
+//                         reverseController.hide();
+//                     }
+//                 } else {
+//                     controller = _folder.addColor(paramData, 'value').name(paramData.name).onChange(reloadTiles);
+//                 }
+//             }
+//         }
 
-        // controller が存在する場合は配列に保持
-        if (controller) {
-            paramControllers.push(controller);
-            if (!data.showMenu && controller.object.name !== '表示') {
-                controller.hide();
-            }
-        }
-    });
-});
+//         // controller が存在する場合は配列に保持
+//         if (controller) {
+//             paramControllers.push(controller);
+//             if (!data.showMenu && controller.object.name !== '表示') {
+//                 controller.hide();
+//             }
+//         }
+//     });
+// });
 
 const other = gui.addFolder('その他').close();
 
