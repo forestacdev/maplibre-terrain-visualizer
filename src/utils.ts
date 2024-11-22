@@ -406,7 +406,7 @@ export const demEntry: DemEntry = {
                     value: true,
                 },
                 opacity: {
-                    name: '透過度',
+                    name: '不透明度',
                     value: 0.7,
                     min: 0,
                     max: 1,
@@ -414,11 +414,11 @@ export const demEntry: DemEntry = {
                 },
                 shadowColor: {
                     name: '陰影色',
-                    value: '#000000',
+                    value: '#505050',
                 },
                 highlightColor: {
                     name: 'ハイライト色',
-                    value: '#ff3300',
+                    value: '#00ff9d',
                 },
                 ambient: {
                     name: '環境光',
@@ -452,8 +452,8 @@ export const demEntry: DemEntry = {
                     value: true,
                 },
                 opacity: {
-                    name: '透過度',
-                    value: 0.8,
+                    name: '不透明度',
+                    value: 0.9,
                     min: 0,
                     max: 1,
                     step: 0.01,
@@ -467,7 +467,7 @@ export const demEntry: DemEntry = {
                 },
                 edgeColor: {
                     name: 'エッジ色',
-                    value: '#00fbff',
+                    value: '#ffffff',
                 },
             },
         },
@@ -480,7 +480,7 @@ export const demEntry: DemEntry = {
                     value: true,
                 },
                 opacity: {
-                    name: '透過度',
+                    name: '不透明度',
                     value: 0.8,
                     min: 0,
                     max: 1,
@@ -517,7 +517,7 @@ export const demEntry: DemEntry = {
                     value: false,
                 },
                 opacity: {
-                    name: '透過度',
+                    name: '不透明度',
                     value: 0.8,
                     min: 0,
                     max: 1,
@@ -540,7 +540,7 @@ export const demEntry: DemEntry = {
                     value: false,
                 },
                 opacity: {
-                    name: '透過度',
+                    name: '不透明度',
                     value: 0.8,
                     min: 0,
                     max: 1,
@@ -563,7 +563,7 @@ export const demEntry: DemEntry = {
                     value: false,
                 },
                 opacity: {
-                    name: '透過度',
+                    name: '不透明度',
                     value: 1.0,
                     min: 0,
                     max: 1,
@@ -602,7 +602,7 @@ export const demEntry: DemEntry = {
                     value: false,
                 },
                 opacity: {
-                    name: '透過度',
+                    name: '不透明度',
                     value: 0.7,
                     min: 0,
                     max: 1,
@@ -637,7 +637,7 @@ export const demEntry: DemEntry = {
                     value: false,
                 },
                 opacity: {
-                    name: '透過度',
+                    name: '不透明度',
                     value: 0.5,
                     min: 0,
                     max: 1,
@@ -694,7 +694,7 @@ export const backgroundSources: { [_: string]: SourceSpecification } = {
         tileSize: 256,
         attribution: '地理院タイル',
     },
-    'Open Street Map': {
+    'OpenStreetMap': {
         type: 'raster',
         tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
         minzoom: 0,
