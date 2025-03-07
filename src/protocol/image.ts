@@ -42,14 +42,7 @@ export class TileImageManager {
         }
     }
 
-    public async getAdjacentTilesWithImages(
-        x: number,
-        y: number,
-        z: number,
-        baseurl: string,
-        controller: AbortController,
-        onlyCenter: boolean, // 新しいオプション引数
-    ): Promise<TileImageData> {
+    public async getAdjacentTilesWithImages(x: number, y: number, z: number, baseurl: string, controller: AbortController): Promise<TileImageData> {
         const positions = [
             { position: 'center', dx: 0, dy: 0 },
             { position: 'left', dx: -1, dy: 0 },
@@ -66,23 +59,12 @@ export class TileImageManager {
                 const tileY = y + dy;
                 const imageUrl = baseurl.replace('{x}', tileX.toString()).replace('{y}', tileY.toString()).replace('{z}', z.toString());
 
-                let imageData;
+                // キャッシュにタイル画像があればそれを使う。なければ新たにリクエストを送る
+                const imageBitmap = this.cache.has(imageUrl) ? this.cache.get(imageUrl) : await this.loadImage(imageUrl, controller.signal);
+                if (!imageBitmap) return;
+                this.add(imageUrl, imageBitmap);
 
-                if (position === 'center' || !onlyCenter) {
-                    // 中心画像を取得、または onlyCenter が false の場合は通常通り画像を取得
-                    if (this.has(imageUrl)) {
-                        imageData = this.get(imageUrl) as ImageBitmap;
-                        if (position === 'center') this.updateOrder(imageUrl); // 中央のみキャッシュの順序を更新
-                    } else {
-                        imageData = await this.loadImage(imageUrl, controller.signal);
-                        if (position === 'center') this.add(imageUrl, imageData); // 中央のみキャッシュに追加
-                    }
-                } else {
-                    // onlyCenter が true の場合、他の位置には空の画像を使用
-                    imageData = await createImageBitmap(new ImageData(1, 1));
-                }
-
-                result[position] = { tileId: imageUrl, image: imageData };
+                result[position] = { tileId: imageUrl, image: imageBitmap };
             }),
         );
 
@@ -96,7 +78,13 @@ export class TileImageManager {
                 this.cache.delete(oldestTileId);
             }
         }
+
         this.cache.set(tileId, image);
+
+        const index = this.cacheOrder.indexOf(tileId);
+        if (index > -1) {
+            this.cacheOrder.splice(index, 1);
+        }
         this.cacheOrder.push(tileId);
     }
 
@@ -106,14 +94,6 @@ export class TileImageManager {
 
     has(tileId: string): boolean {
         return this.cache.has(tileId);
-    }
-
-    updateOrder(tileId: string): void {
-        const index = this.cacheOrder.indexOf(tileId);
-        if (index > -1) {
-            this.cacheOrder.splice(index, 1);
-            this.cacheOrder.push(tileId);
-        }
     }
 
     clear(): void {
