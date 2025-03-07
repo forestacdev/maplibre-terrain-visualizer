@@ -300,7 +300,7 @@ export type DemEntry = {
     layerMaxZoom?: number;
     bbox: [number, number, number, number];
     uniformsData: {
-        evolution: {
+        elevation: {
             name: string;
             showMenu: boolean;
             option: {
@@ -471,7 +471,7 @@ export const demEntry: DemEntry = {
                 },
             },
         },
-        evolution: {
+        elevation: {
             name: '標高',
             showMenu: true,
             option: {

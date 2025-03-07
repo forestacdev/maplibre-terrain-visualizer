@@ -19,7 +19,7 @@ uniform float u_zoom_level;
 uniform float u_max_zoom;
 
 uniform bool  u_slope_mode;
-uniform bool  u_evolution_mode;
+uniform bool  u_elevation_mode;
 uniform bool  u_shadow_mode;
 uniform bool  u_aspect_mode;
 uniform bool  u_curvature_mode;
@@ -27,12 +27,12 @@ uniform bool  u_edge_mode;
 uniform bool  u_contour_mode;
 uniform bool  u_flooding_mode;
 
-uniform sampler2D u_evolutionMap;
+uniform sampler2D u_elevationMap;
 uniform sampler2D u_slopeMap;
 uniform sampler2D u_aspectMap;
 uniform sampler2D u_floodingImage;
 
-uniform float u_evolution_alpha;
+uniform float u_elevation_alpha;
 uniform float u_slope_alpha;
 uniform float u_aspect_alpha;
 uniform float u_curvature_alpha;
@@ -306,7 +306,7 @@ void main() {
     vec4 color = texture(u_height_map_center, uv);
 
 
-    if (!u_evolution_mode && !u_slope_mode && !u_shadow_mode && !u_aspect_mode && !u_curvature_mode && !u_edge_mode && !u_contour_mode && !u_flooding_mode) {
+    if (!u_elevation_mode && !u_slope_mode && !u_shadow_mode && !u_aspect_mode && !u_curvature_mode && !u_edge_mode && !u_contour_mode && !u_flooding_mode) {
         fragColor = color;
         return;
     }
@@ -321,11 +321,11 @@ void main() {
     }
 
 
-    if (u_evolution_mode) {
+    if (u_elevation_mode) {
         float height = convertToHeight(color);
         float normalized_height = clamp((height - u_min_height) / (u_max_height - u_min_height), 0.0, 1.0);
-        vec4 terrain_color = getColorFromMap(u_evolutionMap, normalized_height);
-        final_color = mix(final_color, terrain_color, u_evolution_alpha);
+        vec4 terrain_color = getColorFromMap(u_elevationMap, normalized_height);
+        final_color = mix(final_color, terrain_color, u_elevation_alpha);
     }
 
     if (need_normal) {
