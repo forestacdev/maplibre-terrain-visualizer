@@ -28,7 +28,6 @@ class WorkerProtocol {
             let image;
             if (this.tileCache.has(imageUrl)) {
                 image = this.tileCache.get(imageUrl);
-                this.tileCache.updateOrder(imageUrl);
             } else {
                 image = await this.tileCache.loadImage(imageUrl, controller.signal);
                 this.tileCache.add(imageUrl, image);

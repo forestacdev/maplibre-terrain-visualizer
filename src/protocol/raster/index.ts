@@ -39,7 +39,7 @@ class WorkerProtocol {
         const onlyCenter = tileOptions.normalMapQuality.value === '中心タイルのみ';
 
         // 画像の取得
-        const images = await this.tileCache.getAdjacentTilesWithImages(x, y, z, baseUrl, controller, onlyCenter);
+        const images = await this.tileCache.getAdjacentTilesWithImages(x, y, z, baseUrl, controller);
         const floodingImage = await this.textureCache.loadImage(demEntry.uniformsData.flooding.option.texture.value);
 
         return new Promise((resolve, reject) => {
