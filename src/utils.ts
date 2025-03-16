@@ -133,7 +133,17 @@ export const demLayers: DemData[] = [
         attribution: '産総研シームレス標高タイル',
         demType: 'gsi',
     },
-
+    {
+        id: 'kanagawa',
+        name: '神奈川県',
+        tiles: ['https://tiles.gsj.jp/tiles/elev/kanagawa/{z}/{y}/{x}.png'],
+        tileSize: 256,
+        minzoom: 2,
+        maxzoom: 18,
+        bbox: [138.9401382, 35.1277755, 139.7471238, 35.6730819],
+        attribution: '産総研シームレス標高タイル',
+        demType: 'gsi',
+    },
     {
         id: 'astergdemv3',
         name: 'ASTER全球3次元地形データ',
