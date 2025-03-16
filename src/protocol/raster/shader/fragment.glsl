@@ -71,18 +71,20 @@ float convertToHeight(vec4 color) {
     vec3 rgb = color.rgb * 255.0;
 
     if (u_dem_type == 0.0) {  // mapbox (TerrainRGB)
+
         return -10000.0 + dot(rgb, vec3(256.0 * 256.0, 256.0, 1.0)) * 0.1;
 
     } else if (u_dem_type == 1.0) {  // gsi (地理院標高タイル)
         // 地理院標高タイルの無効値チェック (R, G, B) = (128, 0, 0)
         if (rgb == vec3(128.0, 0.0, 0.0)) {
-            return -9999.0; // 無効地として特別な値を設定
+            return -9999.0;
         }
 
         float total = dot(rgb, vec3(65536.0, 256.0, 1.0));
         return mix(total, total - 16777216.0, step(8388608.0, total)) * 0.01;
 
     } else if (u_dem_type == 2.0) {  // terrarium (TerrariumRGB)
+
         return (rgb.r * 256.0 + rgb.g + rgb.b / 256.0) - 32768.0;
     }
 }
