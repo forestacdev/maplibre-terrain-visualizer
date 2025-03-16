@@ -133,6 +133,61 @@ export const demLayers: DemData[] = [
         attribution: '産総研シームレス標高タイル',
         demType: 'gsi',
     },
+    {
+        id: 'kanagawa',
+        name: '神奈川県',
+        tiles: ['https://tiles.gsj.jp/tiles/elev/kanagawa/{z}/{y}/{x}.png'],
+        tileSize: 256,
+        minzoom: 2,
+        maxzoom: 18,
+        bbox: [138.9401382, 35.1277755, 139.7471238, 35.6730819],
+        attribution: '産総研シームレス標高タイル',
+        demType: 'gsi',
+    },
+    {
+        id: 'rinya_nagaoka_dem',
+        name: '富山県 DEM',
+        tiles: ['https://forestgeo.info/opendata/16_toyama/dem_terrainRGB_2021/{z}/{x}/{y}.png'],
+        tileSize: 256,
+        minzoom: 2,
+        maxzoom: 18,
+        bbox: [136.7502827592869323, 36.2410658946756428, 137.8086007336188743, 37.0181547688286585],
+        attribution: '林野庁',
+        demType: 'mapbox',
+    },
+    {
+        id: 'rinya_toyama_dchm',
+        name: '富山県 dchm',
+        tiles: ['https://forestgeo.info/opendata/16_toyama/dchm_terrainRGB_2021/{z}/{x}/{y}.png'],
+        tileSize: 256,
+        minzoom: 2,
+        maxzoom: 18,
+        bbox: [136.7502827592869323, 36.2410658946756428, 137.8086007336188743, 37.0181547688286585],
+        attribution: '林野庁',
+        demType: 'mapbox',
+    },
+    {
+        id: 'rinya_nagaoka_dem',
+        name: '林野庁 DEM 0.5m（長岡地域2024）',
+        tiles: ['https://cf192141.cloudfree.jp/nagaoka/dem_terrainRGB_15_2024/{z}/{x}/{y}.png'],
+        tileSize: 256,
+        minzoom: 2,
+        maxzoom: 18,
+        bbox: [138.4714917, 37.145854, 139.2533006, 37.744387],
+        attribution: '林野庁',
+        demType: 'mapbox',
+    },
+    {
+        id: 'rinya_nagaoka_dsm',
+        name: '林野庁 DCHM 0.5m（長岡地域2024）',
+        tiles: ['https://cf192141.cloudfree.jp/nagaoka/dchm_terrainRGB_15_2024/{z}/{x}/{y}.png'],
+        tileSize: 256,
+        minzoom: 2,
+        maxzoom: 18,
+        bbox: [138.4714917, 37.145854, 139.2533006, 37.744387],
+        attribution: '林野庁',
+        demType: 'mapbox',
+    },
 
     {
         id: 'astergdemv3',
@@ -300,7 +355,7 @@ export type DemEntry = {
     layerMaxZoom?: number;
     bbox: [number, number, number, number];
     uniformsData: {
-        evolution: {
+        elevation: {
             name: string;
             showMenu: boolean;
             option: {
@@ -471,7 +526,7 @@ export const demEntry: DemEntry = {
                 },
             },
         },
-        evolution: {
+        elevation: {
             name: '標高',
             showMenu: true,
             option: {

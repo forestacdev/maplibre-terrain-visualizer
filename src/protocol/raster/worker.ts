@@ -122,7 +122,7 @@ const setUniforms = (gl: WebGL2RenderingContext, program: WebGLProgram, uniforms
 };
 
 self.onmessage = async (e) => {
-    const { center, left, right, top, bottom, tileId, z, maxzoom, demTypeNumber, uniformsData, evolutionColorArray, slopeCorlorArray, aspectColorArray, floodingImage, onlyCenter } = e.data;
+    const { center, left, right, top, bottom, tileId, z, maxzoom, demTypeNumber, uniformsData, elevationColorArray, slopeCorlorArray, aspectColorArray, floodingImage, onlyCenter } = e.data;
     try {
         if (!gl) {
             initWebGL(canvas);
@@ -132,7 +132,7 @@ self.onmessage = async (e) => {
             throw new Error('WebGL initialization failed');
         }
 
-        const { evolution, slope, shadow, aspect, curvature, edge, contour, flooding } = uniformsData as DemEntry['uniformsData'];
+        const { elevation, slope, shadow, aspect, curvature, edge, contour, flooding } = uniformsData as DemEntry['uniformsData'];
 
         const lightDirection = calculateLightDirection(shadow.option.azimuth.value, shadow.option.altitude.value);
 
@@ -141,7 +141,7 @@ self.onmessage = async (e) => {
             u_only_center: { type: '1i', value: onlyCenter ? 1 : 0 },
             u_zoom_level: { type: '1f', value: z },
             u_max_zoom: { type: '1f', value: maxzoom },
-            u_evolution_mode: { type: '1i', value: evolution.option.visible.value ? 1 : 0 },
+            u_elevation_mode: { type: '1i', value: elevation.option.visible.value ? 1 : 0 },
             u_slope_mode: { type: '1i', value: slope.option.visible.value ? 1 : 0 },
             u_shadow_mode: { type: '1i', value: shadow.option.visible.value ? 1 : 0 },
             u_aspect_mode: { type: '1i', value: aspect.option.visible.value ? 1 : 0 },
@@ -149,7 +149,7 @@ self.onmessage = async (e) => {
             u_edge_mode: { type: '1i', value: edge.option.visible.value ? 1 : 0 },
             u_contour_mode: { type: '1i', value: contour.option.visible.value ? 1 : 0 },
             u_flooding_mode: { type: '1i', value: flooding.option.visible.value ? 1 : 0 },
-            u_evolution_alpha: { type: '1f', value: evolution.option.opacity.value },
+            u_elevation_alpha: { type: '1f', value: elevation.option.opacity.value },
             u_slope_alpha: { type: '1f', value: slope.option.opacity.value },
             u_shadow_strength: { type: '1f', value: shadow.option.opacity.value },
             u_aspect_alpha: { type: '1f', value: aspect.option.opacity.value },
@@ -167,8 +167,8 @@ self.onmessage = async (e) => {
             u_ridge_threshold: { type: '1f', value: curvature.option.ridgeThreshold.value },
             u_valley_threshold: { type: '1f', value: curvature.option.valleyThreshold.value },
             u_edge_intensity: { type: '1f', value: edge.option.edgeIntensity.value },
-            u_max_height: { type: '1f', value: evolution.option.maxHeight.value },
-            u_min_height: { type: '1f', value: evolution.option.minHeight.value },
+            u_max_height: { type: '1f', value: elevation.option.maxHeight.value },
+            u_min_height: { type: '1f', value: elevation.option.minHeight.value },
             u_contour_max_height: { type: '1f', value: contour.option.maxHeight.value },
             u_light_direction: { type: '3fv', value: lightDirection },
             u_contour_count: { type: '1f', value: contour.option.contourCount.value },
@@ -184,7 +184,7 @@ self.onmessage = async (e) => {
             u_height_map_right: { image: right, type: 'height' },
             u_height_map_top: { image: top, type: 'height' },
             u_height_map_bottom: { image: bottom, type: 'height' },
-            ...(evolution.option.visible.value ? { u_evolutionMap: { image: evolutionColorArray, type: 'colormap' } } : {}),
+            ...(elevation.option.visible.value ? { u_elevationMap: { image: elevationColorArray, type: 'colormap' } } : {}),
             ...(slope.option.visible.value ? { u_slopeMap: { image: slopeCorlorArray, type: 'colormap' } } : {}),
             ...(aspect.option.visible.value ? { u_aspectMap: { image: aspectColorArray, type: 'colormap' } } : {}),
             ...(flooding.option.visible.value ? { u_floodingImage: { image: floodingImage, type: 'height' } } : {}),

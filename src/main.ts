@@ -118,6 +118,10 @@ const resetDem = () => {
         type: 'raster',
         tiles: [`${protocol.protocolName}://${demEntry.url}?x={x}&y={y}&z={z}&demType=${demEntry.demType}&maxzoom=${demEntry.sourceMaxZoom}`],
         tileSize: 256,
+        minzoom: demEntry.sourceMinZoom,
+        maxzoom: demEntry.sourceMaxZoom,
+        attribution: demEntry.attribution,
+        bounds: demEntry.bbox,
     });
     map.addLayer({
         id: 'custom_layer',
@@ -193,6 +197,7 @@ gui.add(
             demEntry.sourceMinZoom = layer.minzoom;
             demEntry.sourceMaxZoom = layer.maxzoom;
             demEntry.bbox = layer.bbox;
+            demEntry.attribution = layer.attribution;
             resetDem();
         }
     });

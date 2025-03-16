@@ -19,7 +19,7 @@ uniform float u_zoom_level;
 uniform float u_max_zoom;
 
 uniform bool  u_slope_mode;
-uniform bool  u_evolution_mode;
+uniform bool  u_elevation_mode;
 uniform bool  u_shadow_mode;
 uniform bool  u_aspect_mode;
 uniform bool  u_curvature_mode;
@@ -27,12 +27,12 @@ uniform bool  u_edge_mode;
 uniform bool  u_contour_mode;
 uniform bool  u_flooding_mode;
 
-uniform sampler2D u_evolutionMap;
+uniform sampler2D u_elevationMap;
 uniform sampler2D u_slopeMap;
 uniform sampler2D u_aspectMap;
 uniform sampler2D u_floodingImage;
 
-uniform float u_evolution_alpha;
+uniform float u_elevation_alpha;
 uniform float u_slope_alpha;
 uniform float u_aspect_alpha;
 uniform float u_curvature_alpha;
@@ -71,15 +71,20 @@ float convertToHeight(vec4 color) {
     vec3 rgb = color.rgb * 255.0;
 
     if (u_dem_type == 0.0) {  // mapbox (TerrainRGB)
+
         return -10000.0 + dot(rgb, vec3(256.0 * 256.0, 256.0, 1.0)) * 0.1;
 
     } else if (u_dem_type == 1.0) {  // gsi (地理院標高タイル)
-    
+        // 地理院標高タイルの無効値チェック (R, G, B) = (128, 0, 0)
+        if (rgb == vec3(128.0, 0.0, 0.0)) {
+            return -9999.0;
+        }
+
         float total = dot(rgb, vec3(65536.0, 256.0, 1.0));
         return mix(total, total - 16777216.0, step(8388608.0, total)) * 0.01;
 
     } else if (u_dem_type == 2.0) {  // terrarium (TerrariumRGB)
-        // 標高 = (R値 * 256 + G値 + B値 / 256) - 32768
+
         return (rgb.r * 256.0 + rgb.g + rgb.b / 256.0) - 32768.0;
     }
 }
@@ -305,8 +310,13 @@ void main() {
     vec2 uv = v_tex_coord ;
     vec4 color = texture(u_height_map_center, uv);
 
+    if(color.a == 0.0){
+        // テクスチャなし、または透明ピクセルの場合
+        fragColor = vec4(0.0, 0.0, 0.0, 0.0);
+        return;
+    }
 
-    if (!u_evolution_mode && !u_slope_mode && !u_shadow_mode && !u_aspect_mode && !u_curvature_mode && !u_edge_mode && !u_contour_mode && !u_flooding_mode) {
+    if (!u_elevation_mode && !u_slope_mode && !u_shadow_mode && !u_aspect_mode && !u_curvature_mode && !u_edge_mode && !u_contour_mode && !u_flooding_mode) {
         fragColor = color;
         return;
     }
@@ -321,11 +331,18 @@ void main() {
     }
 
 
-    if (u_evolution_mode) {
+    if (u_elevation_mode) {
         float height = convertToHeight(color);
+
+        if(-9999.0 == height){
+            // 無効地の場合
+            fragColor = vec4(0.0, 0.0, 0.0, 0.0);
+            return;
+        }
+
         float normalized_height = clamp((height - u_min_height) / (u_max_height - u_min_height), 0.0, 1.0);
-        vec4 terrain_color = getColorFromMap(u_evolutionMap, normalized_height);
-        final_color = mix(final_color, terrain_color, u_evolution_alpha);
+        vec4 terrain_color = getColorFromMap(u_elevationMap, normalized_height);
+        final_color = mix(final_color, terrain_color, u_elevation_alpha);
     }
 
     if (need_normal) {

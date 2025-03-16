@@ -53,7 +53,7 @@ class WorkerProtocol {
 
             const demTypeNumber = DEM_DATA_TYPE[demType as DemDataTypeKey];
 
-            const evolutionColorArray = this.colorMapCache.createColorArray(demEntry.uniformsData.evolution.option.colorMap.value, demEntry.uniformsData.evolution.option.colorMap.reverse);
+            const elevationColorArray = this.colorMapCache.createColorArray(demEntry.uniformsData.elevation.option.colorMap.value, demEntry.uniformsData.elevation.option.colorMap.reverse);
             const slopeCorlorArray = this.colorMapCache.createColorArray(demEntry.uniformsData.slope.option.colorMap.value, demEntry.uniformsData.slope.option.colorMap.reverse);
             const aspectColorArray = this.colorMapCache.createColorArray(demEntry.uniformsData.aspect.option.colorMap.value, demEntry.uniformsData.aspect.option.colorMap.reverse);
 
@@ -68,7 +68,7 @@ class WorkerProtocol {
                 maxzoom,
                 demTypeNumber,
                 uniformsData: demEntry.uniformsData,
-                evolutionColorArray,
+                elevationColorArray,
                 slopeCorlorArray,
                 aspectColorArray,
                 floodingImage,
