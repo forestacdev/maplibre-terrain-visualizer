@@ -193,6 +193,7 @@ gui.add(
             demEntry.sourceMinZoom = layer.minzoom;
             demEntry.sourceMaxZoom = layer.maxzoom;
             demEntry.bbox = layer.bbox;
+            demEntry.attribution = layer.attribution;
             resetDem();
         }
     });
