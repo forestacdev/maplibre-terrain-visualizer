@@ -157,7 +157,7 @@ export const demLayers: DemData[] = [
     },
     {
         id: 'rinya_toyama_dchm',
-        name: '富山県 dchm',
+        name: '富山県 DCHM',
         tiles: ['https://forestgeo.info/opendata/16_toyama/dchm_terrainRGB_2021/{z}/{x}/{y}.png'],
         tileSize: 256,
         minzoom: 2,
