@@ -65,6 +65,7 @@ class WorkerProtocol {
                 top: top.image,
                 bottom: bottom.image,
                 z,
+                tileY: y,
                 maxzoom,
                 demTypeNumber,
                 uniformsData: demEntry.uniformsData,

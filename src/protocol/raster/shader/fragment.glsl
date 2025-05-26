@@ -16,6 +16,7 @@ uniform sampler2D u_height_map_bottom;
 
 uniform float u_dem_type; // mapbox(0.0), gsi(1.0), terrarium(2.0)
 uniform float u_zoom_level;
+uniform float u_tile_y;
 uniform float u_max_zoom;
 
 uniform bool  u_slope_mode;
@@ -77,7 +78,7 @@ float convertToHeight(vec4 color) {
     } else if (u_dem_type == 1.0) {  // gsi (地理院標高タイル)
         // 地理院標高タイルの無効値チェック (R, G, B) = (128, 0, 0)
         if (rgb == vec3(128.0, 0.0, 0.0)) {
-            return -9999.0;
+            return 9999.0;
         }
 
         float total = dot(rgb, vec3(65536.0, 256.0, 1.0));
@@ -286,12 +287,50 @@ TerrainData calculateTerrainData(vec2 uv) {
     return data;
 }
 
-// 傾斜量を計算する関数
-float calculateSlope(vec3 normal) {
-    // 法線ベクトルのZ成分から傾斜角を計算
-    float slope = acos(normal.z);
-    // ラジアンから度に変換
-    return degrees(slope);
+// タイルのY座標とuv座標から緯度(ラジアン)を取得する関数
+float getLatitudeFromTileUV(float tileY, float uv_y, float zoom) {
+    float n = 3.141592653589793 * (1.0 - 2.0 * ((tileY + uv_y) / pow(2.0, zoom)));
+    return degrees(atan(sinh(n)));
+}
+
+// 地球の周囲長を基に、ズームレベルに応じた解像度を計算
+float getResolution(float zoom) {
+    return 40075016.68557849 / (256.0 * pow(2.0, float(zoom)));
+}
+
+// 緯度に応じたピクセルあたりの東西方向の地上解像度を計算
+float getEwRes(float zoom, float latitude_deg) {
+    return getResolution(zoom) * cos(radians(latitude_deg));
+}
+// 傾斜量を計算する関数 Horn法
+float calculateSlope(mat3 h, float ewres, float nsres, float scale, bool asDegrees) {
+
+    // 無効値チェック（9999.0 が1つでも含まれていたらスキップ）
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            if (h[i][j] >= 9999.0) {
+                return -1.0; // 無効値が含まれている場合は-1.0を返して判定から除外
+            }
+        }
+    }
+
+    float dx = (
+        (h[0][0] + 2.0 * h[1][0] + h[2][0]) - 
+        (h[0][2] + 2.0 * h[1][2] + h[2][2])
+    ) / (8.0 * ewres);
+
+    float dy = (
+        (h[2][0] + 2.0 * h[2][1] + h[2][2]) - 
+        (h[0][0] + 2.0 * h[0][1] + h[0][2])
+    ) / (8.0 * nsres);
+
+    float grad = sqrt(dx * dx + dy * dy);
+
+    if (asDegrees) {
+        return degrees(atan(grad / scale));
+    } else {
+        return 100.0 * grad / scale;
+    }
 }
 
 // 等高線を生成する関数 
@@ -322,7 +361,7 @@ void main() {
     }
 
     vec4 final_color = vec4(0.0, 0.0,0.0,0.0);
-    bool need_normal = (u_slope_mode || u_aspect_mode || u_shadow_mode || u_edge_mode);
+    bool need_normal = (u_aspect_mode || u_shadow_mode || u_edge_mode);
     bool need_curvature = (u_curvature_mode);
 
     TerrainData terrain_data;
@@ -334,7 +373,7 @@ void main() {
     if (u_elevation_mode) {
         float height = convertToHeight(color);
 
-        if(-9999.0 == height){
+        if(9999.0 == height){
             // 無効地の場合
             fragColor = vec4(0.0, 0.0, 0.0, 0.0);
             return;
@@ -345,18 +384,37 @@ void main() {
         final_color = mix(final_color, terrain_color, u_elevation_alpha);
     }
 
-    if (need_normal) {
-        vec3 normal = terrain_data.normal;
+    if (u_slope_mode) {
+        float height = convertToHeight(color);
 
-        if (u_slope_mode) {
-            float slope = calculateSlope(normal);
-            float normalized_slope = clamp(slope / 90.0, 0.0, 1.0);
-            vec4 slope_color = getColorFromMap(u_slopeMap, normalized_slope);
-            final_color = mix(final_color, slope_color, u_slope_alpha);
-            // NOTE: 放線のデバッグ
-            // vec3 normalizedColor = (normal + 1.0) * 0.5;
-            // final_color = vec4(normalizedColor, 1.0);
+        if(9999.0 == height){
+            // 無効地の場合
+            fragColor = vec4(0.0, 0.0, 0.0, 0.0);
+            return;
         }
+
+        // 南北方向（nsres） は常に ≒ 9.5546 m/pixel（縦は歪まない）
+        float nsres = 9.5546;
+
+        // タイルのY座標とuv座標からから緯度を取得
+        float lat = getLatitudeFromTileUV(u_tile_y, uv.y, u_zoom_level);
+
+        // 東西方向（ewres）
+        float ewres = getEwRes(u_zoom_level, lat);
+
+        // 傾斜量を計算
+        float slope = calculateSlope(height_matrix, ewres, nsres, 1.0, true);
+        float normalized_slope = clamp(slope / 90.0, 0.0, 1.0);
+        vec4 slope_color = getColorFromMap(u_slopeMap, normalized_slope);
+        final_color = mix(final_color, slope_color, u_slope_alpha);
+        // NOTE: 放線のデバッグ
+        // vec3 normalizedColor = (normal + 1.0) * 0.5;
+        // final_color = vec4(normalizedColor, 1.0);
+        }
+
+    if (need_normal) {
+
+        vec3 normal = terrain_data.normal;
 
         if (u_aspect_mode) {
             float aspect = atan(normal.y, normal.x);
@@ -424,15 +482,15 @@ void main() {
         vec2 e = vec2(1.5/256.0, 0);
         float edge_x = abs(height_matrix[1][2] - height_matrix[1][0]); // 左右の高さ差
         float edge_y = abs(height_matrix[2][1] - height_matrix[0][1]); // 上下の高さ差
-        
+
         float z = 0.5 * exp2(u_zoom_level - 17.0);
         float edge_intensity = z;
-        
+
         float edge_strength = (edge_x + edge_y) * edge_intensity * u_edge_intensity;
-        
+
         // エッジの透明度を考慮したブレンディング
         vec4 edge = vec4(u_edge_color.rgb, clamp(edge_strength, 0.0, 0.8) * u_edge_alpha);
-        
+
         // アルファブレンディング
         final_color.rgb = mix(final_color.rgb, edge.rgb, edge.a);
         final_color.a = max(final_color.a, edge.a);

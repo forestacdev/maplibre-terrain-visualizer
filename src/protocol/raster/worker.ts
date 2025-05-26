@@ -122,7 +122,7 @@ const setUniforms = (gl: WebGL2RenderingContext, program: WebGLProgram, uniforms
 };
 
 self.onmessage = async (e) => {
-    const { center, left, right, top, bottom, tileId, z, maxzoom, demTypeNumber, uniformsData, elevationColorArray, slopeCorlorArray, aspectColorArray, floodingImage, onlyCenter } = e.data;
+    const { center, left, right, top, bottom, tileId, z, tileY, maxzoom, demTypeNumber, uniformsData, elevationColorArray, slopeCorlorArray, aspectColorArray, floodingImage, onlyCenter } = e.data;
     try {
         if (!gl) {
             initWebGL(canvas);
@@ -140,6 +140,7 @@ self.onmessage = async (e) => {
             u_dem_type: { type: '1f', value: demTypeNumber },
             u_only_center: { type: '1i', value: onlyCenter ? 1 : 0 },
             u_zoom_level: { type: '1f', value: z },
+            u_tile_y: { type: '1f', value: tileY },
             u_max_zoom: { type: '1f', value: maxzoom },
             u_elevation_mode: { type: '1i', value: elevation.option.visible.value ? 1 : 0 },
             u_slope_mode: { type: '1i', value: slope.option.visible.value ? 1 : 0 },
